@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Group Size Enforcer",
+  "description": "Monitors code that handles groups and ensures the 25-player group size constraint is properly enforced throughout the codebase",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/server/**/*.ts",
+      "src/shared/types/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Code related to groups or waiting rooms has been modified. Verify that the 25-player group size constraint is properly enforced:\n\n1. Waiting rooms should only create creatures when exactly 25 players have joined\n2. Group membership should be validated to have exactly 25 members\n3. Subreddit capacity calculations should use floor(members/25)\n4. Any group-related operations should validate group size\n5. UI should display X/25 format for waiting room status\n\nCheck the modified code against Requirements 1 and 2 in .kiro/specs/regenx-mvp/requirements.md. If the constraint is properly enforced, no action needed."
+  }
+}

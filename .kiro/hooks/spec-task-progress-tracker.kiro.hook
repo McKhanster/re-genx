@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Spec Task Progress Tracker",
+  "description": "Monitors file changes during spec task execution and suggests marking tasks as complete when implementation is done",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.css",
+      "src/**/*.html"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Files have been modified. Check if there are any in-progress tasks in .kiro/specs/regenx-mvp/tasks.md that might be completed by these changes. If you find tasks that appear to be fully implemented:\n\n1. Verify the implementation matches the task requirements\n2. Check that all sub-tasks are also complete\n3. Suggest marking the task as complete\n4. If the task has optional sub-tasks (marked with *), remind that those can be skipped\n\nDon't be overly aggressive - only suggest completion if you're confident the implementation is done. If unsure, no action needed."
+  }
+}
