@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { calculateRadiusOffset, generatePulsation } from '../utils/noise';
 import { MutationData } from '../../shared/types/api';
 import { generateMutationGeometry } from './mutation-geometry';
+import { StatFeedback } from '../ui/stat-feedback';
 
 /**
  * CreatureRenderer handles rendering the base creature blob and all applied mutations
@@ -44,21 +45,21 @@ export class CreatureRenderer {
     material: THREE.MeshPhongMaterial;
     mesh: THREE.Mesh;
   } {
-    // Adjust geometry complexity based on device
-    const segments = this.isMobile ? 24 : 48;
+    // Increase geometry complexity for smoother surface
+    const segments = this.isMobile ? 48 : 96;
 
-    // Create sphere geometry
+    // Create sphere geometry with higher detail
     const geometry = new THREE.SphereGeometry(1.5, segments, segments);
 
-    // Deform the sphere to create irregular blob shape
+    // Deform the sphere to create irregular blob shape with gentler noise
     const positionAttribute = geometry.getAttribute('position');
     for (let i = 0; i < positionAttribute.count; i++) {
       const x = positionAttribute.getX(i);
       const y = positionAttribute.getY(i);
       const z = positionAttribute.getZ(i);
 
-      // Add initial noise to create irregular blob shape
-      const offset = calculateRadiusOffset(x, y, z, 0, 0.8, 0.2);
+      // Add initial noise with reduced amplitude for smoother surface
+      const offset = calculateRadiusOffset(x, y, z, 0, 0.6, 0.12);
 
       const length = Math.sqrt(x * x + y * y + z * z);
       const scale = 1 + offset;
@@ -69,13 +70,14 @@ export class CreatureRenderer {
     positionAttribute.needsUpdate = true;
     geometry.computeVertexNormals();
 
-    // Create emissive material for glow effect
+    // Create semi-gloss platinum material with subtle glow
     const material = new THREE.MeshPhongMaterial({
-      color: 0x00ff88,
-      emissive: 0x00ff88,
-      emissiveIntensity: 0.5,
-      shininess: 100,
-      flatShading: false,
+      color: 0xe5e4e2, // Platinum color
+      emissive: 0xaaaaaa, // Subtle warm glow
+      emissiveIntensity: 0.3,
+      shininess: 80, // Semi-gloss finish
+      specular: 0xffffff, // Bright specular highlights for metallic look
+      flatShading: false, // Smooth shading for glossy look
     });
 
     const mesh = new THREE.Mesh(geometry, material);
@@ -107,8 +109,8 @@ export class CreatureRenderer {
       const origY = this.originalPositions[i * 3 + 1] ?? 0;
       const origZ = this.originalPositions[i * 3 + 2] ?? 0;
 
-      // Calculate radius offset using noise for smooth continuous motion
-      const offset = calculateRadiusOffset(origX, origY, origZ, this.time, 1.0, 0.15);
+      // Calculate radius offset using noise for smooth continuous motion with reduced amplitude
+      const offset = calculateRadiusOffset(origX, origY, origZ, this.time, 0.8, 0.1);
 
       const length = Math.sqrt(origX * origX + origY * origY + origZ * origZ);
       const scale = 1 + offset;
@@ -182,9 +184,14 @@ export class CreatureRenderer {
    * Animate a mutation appearing on the creature
    * @param mutationId - ID of the mutation to animate
    * @param duration - Duration of animation in milliseconds
+   * @param showStatChanges - Whether to display stat change feedback
    * @returns Promise that resolves when animation completes
    */
-  public async animateMutation(mutationId: string, duration: number = 2500): Promise<void> {
+  public async animateMutation(
+    mutationId: string,
+    duration: number = 2500,
+    showStatChanges: boolean = true
+  ): Promise<void> {
     const mesh = this.mutationMeshes.get(mutationId);
     if (!mesh) {
       console.warn(`Mutation ${mutationId} not found`);
@@ -225,6 +232,56 @@ export class CreatureRenderer {
   }
 
   /**
+   * Display stat changes as floating numbers
+   * @param statEffects - Object containing stat changes by category
+   */
+  public showStatChanges(statEffects: Record<string, Record<string, number>>): void {
+    // Flatten all stat changes into a single object
+    const allChanges: Record<string, number> = {};
+
+    for (const [category, stats] of Object.entries(statEffects)) {
+      for (const [statName, change] of Object.entries(stats)) {
+        // Use category.statName as key for clarity
+        const displayName = `${category}.${statName}`;
+        allChanges[displayName] = change;
+      }
+    }
+
+    // Display all stat changes
+    StatFeedback.showMultipleStatChanges(allChanges);
+  }
+
+  /**
+   * Apply a mutation and show stat changes
+   * @param mutation - Mutation data to apply
+   * @param randomnessFactor - Factor for randomness (0-1)
+   * @param animate - Whether to animate the mutation appearance
+   * @param showStats - Whether to show stat change feedback
+   */
+  public async applyMutationWithFeedback(
+    mutation: MutationData,
+    randomnessFactor: number,
+    animate: boolean = true,
+    showStats: boolean = true
+  ): Promise<void> {
+    // Apply the mutation geometry
+    this.applyMutation(mutation, randomnessFactor);
+
+    // Show stat changes if requested
+    if (showStats && mutation.statEffects) {
+      // Delay stat feedback slightly so it appears during animation
+      setTimeout(() => {
+        this.showStatChanges(mutation.statEffects);
+      }, 500);
+    }
+
+    // Animate if requested
+    if (animate) {
+      await this.animateMutation(mutation.id);
+    }
+  }
+
+  /**
    * Ease-out-elastic easing function for smooth bouncy animations
    */
   private easeOutElastic(x: number): number {
@@ -261,6 +318,86 @@ export class CreatureRenderer {
     this.mutationMeshes.forEach((_mesh, id) => {
       this.removeMutation(id);
     });
+  }
+
+  /**
+   * Update the creature's appearance based on care meter level
+   * @param careMeter - Care meter value (0-100)
+   */
+  public updateCareMeterVisuals(careMeter: number): void {
+    if (careMeter < 20) {
+      // Sad/distressed appearance - dull colors, minimal pulsing
+      this.baseMaterial.color.setHex(0x999999); // Dull gray
+      this.baseMaterial.emissive.setHex(0x666666); // Very dim glow
+      this.baseMaterial.emissiveIntensity = 0.1;
+      // Creature appears to droop slightly
+      this.baseMesh.position.y = 1.0;
+    } else if (careMeter < 50) {
+      // Neutral appearance - normal colors, slower pulsing
+      this.baseMaterial.color.setHex(0xcccccc); // Light gray
+      this.baseMaterial.emissive.setHex(0x888888); // Dim glow
+      this.baseMaterial.emissiveIntensity = 0.2;
+      this.baseMesh.position.y = 1.1;
+    } else {
+      // Happy appearance - bright colors, active pulsing
+      this.baseMaterial.color.setHex(0xe5e4e2); // Platinum
+      this.baseMaterial.emissive.setHex(0xaaaaaa); // Warm glow
+      this.baseMaterial.emissiveIntensity = 0.3;
+      this.baseMesh.position.y = 1.2;
+    }
+  }
+
+  /**
+   * Trigger a care action animation on the creature
+   * @param action - Type of care action (feed, play, attention)
+   */
+  public triggerCareAnimation(action: 'feed' | 'play' | 'attention'): void {
+    const duration = 1000; // 1 second animation
+    const startTime = Date.now();
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      switch (action) {
+        case 'feed':
+          // Eating motion - expand and contract
+          const eatScale = 1 + Math.sin(progress * Math.PI * 4) * 0.15;
+          this.baseMesh.scale.set(eatScale, eatScale * 0.9, eatScale);
+          // Glow brighter
+          this.baseMaterial.emissiveIntensity = 0.5 + Math.sin(progress * Math.PI) * 0.4;
+          break;
+
+        case 'play':
+          // Bouncing/spinning motion
+          const bounceHeight = Math.sin(progress * Math.PI * 3) * 0.5;
+          this.baseMesh.position.y = 1.2 + bounceHeight;
+          this.baseMesh.rotation.y = progress * Math.PI * 2;
+          // Pulse glow
+          this.baseMaterial.emissiveIntensity = 0.5 + Math.sin(progress * Math.PI * 6) * 0.3;
+          break;
+
+        case 'attention':
+          // Happy pulse - gentle expansion
+          const happyScale = 1 + Math.sin(progress * Math.PI * 2) * 0.1;
+          this.baseMesh.scale.set(happyScale, happyScale, happyScale);
+          // Warm glow
+          this.baseMaterial.emissiveIntensity = 0.5 + Math.sin(progress * Math.PI) * 0.5;
+          break;
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Reset to normal state
+        this.baseMesh.scale.set(1, 1, 1);
+        this.baseMesh.position.y = 1.2;
+        this.baseMesh.rotation.y = 0;
+        this.baseMaterial.emissiveIntensity = 0.5;
+      }
+    };
+
+    animate();
   }
 
   /**

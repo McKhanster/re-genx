@@ -57,6 +57,7 @@ export class SceneManager {
 
     // Add fog to create darkness beyond 10ft radius
     // 10ft ≈ 3 meters in our scene units
+    // Fog starts at 10 meters and fully dark at 20 meters for better visibility
     this.fog = new THREE.Fog(0x000000, 10, 20);
     this.scene.fog = this.fog;
 
@@ -76,30 +77,49 @@ export class SceneManager {
    * Set up spotlight from directly above with proper angle and intensity
    */
   private initLighting(): void {
-    // Spotlight from directly above with 10ft radius coverage
-    this.spotlight = new THREE.SpotLight(0xffffff, 2.5);
+    // Single spotlight from directly above - the only light source
+    this.spotlight = new THREE.SpotLight(0xffffff, 15.0); // Reduced intensity for better shadow contrast
     this.spotlight.position.set(0, 12, 0);
-    this.spotlight.angle = Math.PI / 3; // 60 degree cone for wider coverage
-    this.spotlight.penumbra = 0.4; // Soft edge
-    this.spotlight.decay = 1.5;
-    this.spotlight.distance = 25;
+    this.spotlight.angle = Math.PI / 3; // Narrower cone for more focused light
+    this.spotlight.penumbra = 0.3; // Softer edge for more natural shadows
+    this.spotlight.decay = 1.0; // More natural decay
+    this.spotlight.distance = 30;
     this.spotlight.castShadow = !this.mobile; // Disable shadows on mobile
 
     if (!this.mobile) {
-      this.spotlight.shadow.mapSize.width = 1024;
-      this.spotlight.shadow.mapSize.height = 1024;
-      this.spotlight.shadow.camera.near = 1;
+      // Higher resolution shadow map for better quality
+      this.spotlight.shadow.mapSize.width = 2048;
+      this.spotlight.shadow.mapSize.height = 2048;
+      // Shadow camera settings - must capture from light (y=12) to ground (y=-0.5)
+      this.spotlight.shadow.camera.near = 0.5;
       this.spotlight.shadow.camera.far = 25;
+      // Adjust shadow bias - negative values can help with shadow acne
+      this.spotlight.shadow.bias = -0.001;
+      // Normalize bias helps with peter-panning
+      this.spotlight.shadow.normalBias = 0.02;
     }
 
-    this.scene.add(this.spotlight);
-    this.scene.add(this.spotlight.target);
-
-    // Add subtle ambient light so creature isn't completely black in shadows
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+    // Add subtle ambient light - too much washes out shadows
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.2);
     this.scene.add(ambientLight);
 
-    console.log('Lighting initialized - spotlight and ambient');
+    // Add spotlight and target to scene first
+    this.scene.add(this.spotlight);
+    this.scene.add(this.spotlight.target);
+    
+    // Then set target position - points at origin (0, 0, 0) - directly downward
+    this.spotlight.target.position.set(0, 0, 0);
+    this.spotlight.target.updateMatrixWorld();
+
+    console.log('Lighting initialized - bright spotlight with ambient fill');
+    if (!this.mobile) {
+      console.log('Shadow settings:', {
+        castShadow: this.spotlight.castShadow,
+        mapSize: this.spotlight.shadow.mapSize,
+        bias: this.spotlight.shadow.bias,
+        normalBias: this.spotlight.shadow.normalBias,
+      });
+    }
   }
 
   /**
@@ -205,6 +225,13 @@ export class SceneManager {
    */
   public getQualityMultiplier(): number {
     return this.mobile ? 0.5 : 1.0;
+  }
+
+  /**
+   * Get the spotlight for debugging
+   */
+  public getSpotlight(): THREE.SpotLight {
+    return this.spotlight;
   }
 
   /**

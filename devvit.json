@@ -30,6 +30,16 @@
   "triggers": {
     "onAppInstall": "/internal/on-app-install"
   },
+  "scheduler": {
+    "tasks": {
+      "evolution-cycle": {
+        "endpoint": "/internal/scheduler/evolution-cycle"
+      },
+      "care-decay": {
+        "endpoint": "/internal/scheduler/care-decay"
+      }
+    }
+  },
   "dev": {
     "subreddit": "re_genx_dev"
   }

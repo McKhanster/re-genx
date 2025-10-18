@@ -38,6 +38,57 @@ export interface CreatureStats {
 }
 
 // ============================================================================
+// Familiar Stats (Personal Creature)
+// ============================================================================
+
+export interface FamiliarStats {
+  mobility: {
+    speed: number; // 0-100
+    agility: number; // 0-100
+    endurance: number; // 0-100
+  };
+  senses: {
+    vision: number; // 0-100
+    hearing: number; // 0-100
+    smell: number; // 0-100
+  };
+  survival: {
+    attack: number; // 0-100
+    defense: number; // 0-100
+    stealth: number; // 0-100
+  };
+  cognition: {
+    intelligence: number; // 0-100
+    social: number; // 0-100
+    adaptability: number; // 0-100
+  };
+  vitals: {
+    health: number; // 0-100
+    happiness: number; // 0-100
+    energy: number; // 0-100
+  };
+}
+
+// ============================================================================
+// Familiar State
+// ============================================================================
+
+export interface FamiliarState {
+  id: string;
+  userId: string;
+  age: number;
+  careMeter: number; // 0-100
+  evolutionPoints: number;
+  mutations: MutationData[];
+  stats: FamiliarStats;
+  biome: BiomeType;
+  lastCareTime: number;
+  createdAt: number;
+  privacyOptIn: boolean;
+  neglectWarning?: boolean;
+}
+
+// ============================================================================
 // Mutation Types
 // ============================================================================
 
@@ -129,6 +180,52 @@ export interface KarmaContributeResponse {
 
 export interface ErrorResponse {
   error: string;
+}
+
+export interface FamiliarStateResponse {
+  familiar: FamiliarState | null;
+}
+
+export interface FamiliarCreateResponse {
+  familiar: FamiliarState;
+}
+
+export interface CareActionResponse {
+  careMeter: number;
+  evolutionPoints: number;
+  careMeterIncrease: number;
+  evolutionPointsGained: number;
+}
+
+export interface MutationTriggerResponse {
+  sessionId: string;
+  options: MutationTraitOption[];
+}
+
+export interface MutationTraitOption {
+  id: string;
+  category: string;
+  label: string;
+  value: string | number | boolean | object;
+}
+
+export interface MutationChooseRequest {
+  sessionId: string;
+  optionId: string;
+}
+
+export interface MutationChooseResponse {
+  mutation: MutationData;
+  updatedStats: FamiliarStats;
+}
+
+export interface PrivacyOptInRequest {
+  optIn: boolean;
+}
+
+export interface PrivacyOptInResponse {
+  success: boolean;
+  privacyOptIn: boolean;
 }
 
 // ============================================================================
