@@ -3,6 +3,7 @@ import { MutationEngine } from './mutation-engine';
 import { CareSystem } from './care-system';
 import { FamiliarManager } from './familiar-manager';
 import { BiomeType } from '../../shared/types/api';
+import { safeRedisOperation } from '../utils/redis-utils';
 
 /**
  * EvolutionScheduler manages evolution cycles and care meter decay
@@ -251,6 +252,7 @@ export class EvolutionScheduler {
 
   /**
    * Safe Redis operation wrapper with retry logic
+   * Uses centralized utility from redis-utils
    *
    * @param operation - Redis operation to execute
    * @param fallback - Fallback value if all retries fail
@@ -262,18 +264,6 @@ export class EvolutionScheduler {
     fallback: T,
     retries: number = 3
   ): Promise<T> {
-    for (let i = 0; i < retries; i++) {
-      try {
-        return await operation();
-      } catch (error) {
-        console.error(`Redis operation failed (attempt ${i + 1}/${retries}):`, error);
-        if (i === retries - 1) {
-          return fallback;
-        }
-        // Exponential backoff
-        await new Promise((resolve) => setTimeout(resolve, Math.pow(2, i) * 1000));
-      }
-    }
-    return fallback;
+    return safeRedisOperation(operation, fallback, retries);
   }
 }

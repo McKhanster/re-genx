@@ -6,6 +6,7 @@ import { StatFeedback } from '../ui/stat-feedback';
 
 /**
  * CreatureRenderer handles rendering the base creature blob and all applied mutations
+ * Implements LOD (Level of Detail) system for mobile optimization
  */
 export class CreatureRenderer {
   private baseMesh: THREE.Mesh;
@@ -16,11 +17,17 @@ export class CreatureRenderer {
   private isMobile: boolean;
   private originalPositions: Float32Array;
   private time: number = 0;
+  private lodLevel: 'high' | 'medium' | 'low';
+  private qualityMultiplier: number;
 
   constructor(scene: THREE.Scene, isMobile: boolean = false) {
     this.scene = scene;
     this.isMobile = isMobile;
     this.mutationMeshes = new Map();
+    
+    // Set LOD level based on device
+    this.lodLevel = isMobile ? 'low' : 'high';
+    this.qualityMultiplier = isMobile ? 0.5 : 1.0;
 
     // Initialize base mesh
     const { geometry, material, mesh } = this.createBaseMesh();
@@ -39,16 +46,17 @@ export class CreatureRenderer {
 
   /**
    * Create the base pulsating blob mesh with irregular organic geometry
+   * Uses LOD-based segment count for optimal performance
    */
   private createBaseMesh(): {
     geometry: THREE.SphereGeometry;
     material: THREE.MeshPhongMaterial;
     mesh: THREE.Mesh;
   } {
-    // Increase geometry complexity for smoother surface
-    const segments = this.isMobile ? 48 : 96;
+    // LOD-based geometry complexity
+    const segments = this.getSegmentCount();
 
-    // Create sphere geometry with higher detail
+    // Create sphere geometry with LOD-appropriate detail
     const geometry = new THREE.SphereGeometry(1.5, segments, segments);
 
     // Deform the sphere to create irregular blob shape with gentler noise
@@ -59,7 +67,7 @@ export class CreatureRenderer {
       const z = positionAttribute.getZ(i);
 
       // Add initial noise with reduced amplitude for smoother surface
-      const offset = calculateRadiusOffset(x, y, z, 0, 0.6, 0.12);
+      const offset = calculateRadiusOffset(x, y, z, 0, 0.5, 0.08);
 
       const length = Math.sqrt(x * x + y * y + z * z);
       const scale = 1 + offset;
@@ -110,7 +118,7 @@ export class CreatureRenderer {
       const origZ = this.originalPositions[i * 3 + 2] ?? 0;
 
       // Calculate radius offset using noise for smooth continuous motion with reduced amplitude
-      const offset = calculateRadiusOffset(origX, origY, origZ, this.time, 0.8, 0.1);
+      const offset = calculateRadiusOffset(origX, origY, origZ, this.time, 0.6, 0.06);
 
       const length = Math.sqrt(origX * origX + origY * origY + origZ * origZ);
       const scale = 1 + offset;
@@ -134,6 +142,50 @@ export class CreatureRenderer {
     // Pulse the glow intensity
     const glowPulse = 0.5 + Math.sin(this.time * 1.5) * 0.2;
     this.baseMaterial.emissiveIntensity = glowPulse;
+  }
+
+  /**
+   * Get segment count based on LOD level
+   * High: 96 segments, Medium: 64 segments, Low: 48 segments
+   */
+  private getSegmentCount(): number {
+    switch (this.lodLevel) {
+      case 'high':
+        return 96;
+      case 'medium':
+        return 64;
+      case 'low':
+        return 48;
+      default:
+        return 64;
+    }
+  }
+
+  /**
+   * Get the current LOD level
+   */
+  public getLODLevel(): 'high' | 'medium' | 'low' {
+    return this.lodLevel;
+  }
+
+  /**
+   * Set the LOD level dynamically
+   * Useful for adaptive quality based on performance
+   */
+  public setLODLevel(level: 'high' | 'medium' | 'low'): void {
+    if (this.lodLevel === level) return;
+    
+    this.lodLevel = level;
+    this.qualityMultiplier = level === 'low' ? 0.5 : level === 'medium' ? 0.75 : 1.0;
+    
+    console.log(`LOD level changed to: ${level} (quality: ${this.qualityMultiplier})`);
+  }
+
+  /**
+   * Get the quality multiplier for particle counts and effects
+   */
+  public getQualityMultiplier(): number {
+    return this.qualityMultiplier;
   }
 
   /**

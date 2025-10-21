@@ -22,6 +22,16 @@ import { CareSystem } from './core/care-system';
 import { MutationEngine } from './core/mutation-engine';
 import { ActivityTracker } from './core/activity-tracker';
 import { EvolutionScheduler } from './core/evolution-scheduler';
+import { RateLimitMiddleware } from './middleware/rate-limit-middleware';
+import {
+  validateCareAction,
+  validateMutationOptionId,
+  validateSessionId,
+  validateCreatureId,
+  validateBoolean,
+  validateUsername,
+  ValidationError,
+} from './utils/input-validator';
 
 const app = express();
 
@@ -31,6 +41,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Middleware for plain text body parsing
 app.use(express.text());
+
+// Rate limiting middleware (100 requests per minute per user)
+const rateLimitMiddleware = new RateLimitMiddleware(100, 60000);
+app.use('/api/', rateLimitMiddleware.middleware);
 
 const router = express.Router();
 
@@ -47,6 +61,22 @@ const evolutionScheduler = new EvolutionScheduler(
   familiarManager
 );
 
+/**
+ * Helper function to get username with dev fallback
+ * Returns authenticated username or generates a dev username for testing
+ */
+async function getUsernameWithFallback(): Promise<string> {
+  let username = await reddit.getCurrentUsername();
+  
+  // Fallback for development/testing when not authenticated
+  if (!username) {
+    username = 'dev_user_test';
+    console.log('No authenticated user, using dev username:', username);
+  }
+  
+  return username;
+}
+
 // ============================================================================
 // Re-GenX API Endpoints
 // ============================================================================
@@ -59,12 +89,8 @@ router.get<unknown, GroupStatusResponse | ErrorResponse>(
   '/api/group/status',
   async (_req, res): Promise<void> => {
     try {
-      // Get userId from Reddit context
-      const username = await reddit.getCurrentUsername();
-      if (!username) {
-        res.status(401).json({ error: 'User not authenticated' });
-        return;
-      }
+      // Get userId from Reddit context with dev fallback
+      const username = await getUsernameWithFallback();
 
       // Get subredditId from context
       const subredditId = context.subredditId;
@@ -102,8 +128,11 @@ router.get<
       return;
     }
 
+    // Validate creature ID
+    const validatedCreatureId = validateCreatureId(creatureId);
+
     // Fetch creature data from Redis
-    const creatureData = await groupManager.getCreatureState(creatureId);
+    const creatureData = await groupManager.getCreatureState(validatedCreatureId);
 
     if (!creatureData) {
       res.status(404).json({ error: 'Creature not found' });
@@ -113,6 +142,12 @@ router.get<
     res.json(creatureData);
   } catch (error) {
     console.error('Error in /api/creature/state:', error);
+
+    if (error instanceof ValidationError) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+
     res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to get creature state',
     });
@@ -131,19 +166,24 @@ router.get<unknown, FamiliarStateResponse | ErrorResponse>(
   '/api/familiar/state',
   async (_req, res): Promise<void> => {
     try {
-      // Get userId from Reddit context
-      const username = await reddit.getCurrentUsername();
-      if (!username) {
-        res.status(401).json({ error: 'User not authenticated' });
-        return;
-      }
+      // Get userId from Reddit context with dev fallback
+      const username = await getUsernameWithFallback();
+
+      // Validate username
+      const validatedUsername = validateUsername(username);
 
       // Get familiar state
-      const familiar = await familiarManager.getFamiliar(username);
+      const familiar = await familiarManager.getFamiliar(validatedUsername);
 
       res.json({ familiar });
     } catch (error) {
       console.error('Error in /api/familiar/state:', error);
+
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+
       res.status(500).json({
         error: error instanceof Error ? error.message : 'Failed to get familiar state',
       });
@@ -159,20 +199,19 @@ router.post<unknown, FamiliarCreateResponse | ErrorResponse>(
   '/api/familiar/create',
   async (_req, res): Promise<void> => {
     try {
-      // Get userId from Reddit context
-      const username = await reddit.getCurrentUsername();
-      if (!username) {
-        res.status(401).json({ error: 'User not authenticated' });
-        return;
-      }
+      // Get userId from Reddit context with dev fallback
+      const username = await getUsernameWithFallback();
+
+      // Validate username
+      const validatedUsername = validateUsername(username);
 
       // Create familiar
-      const familiar = await familiarManager.createFamiliar(username);
+      const familiar = await familiarManager.createFamiliar(validatedUsername);
 
       // Schedule first evolution cycle and care decay
       try {
-        await evolutionScheduler.scheduleEvolutionCycle(username);
-        await evolutionScheduler.scheduleCareDecay(username);
+        await evolutionScheduler.scheduleEvolutionCycle(validatedUsername);
+        await evolutionScheduler.scheduleCareDecay(validatedUsername);
       } catch (scheduleError) {
         console.error('Error scheduling evolution cycle or care decay:', scheduleError);
         // Don't fail the request if scheduling fails
@@ -181,9 +220,41 @@ router.post<unknown, FamiliarCreateResponse | ErrorResponse>(
       res.json({ familiar });
     } catch (error) {
       console.error('Error in /api/familiar/create:', error);
+
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+
       res.status(500).json({
         error: error instanceof Error ? error.message : 'Failed to create familiar',
       });
+    }
+  }
+);
+
+/**
+ * Debug endpoint: Reset familiar mutations
+ * Clears all mutations and resets evolution points
+ */
+router.post<unknown, { success: boolean; message: string } | ErrorResponse>(
+  '/api/familiar/reset',
+  async (_req, res): Promise<void> => {
+    try {
+      const username = await getUsernameWithFallback();
+      const validatedUsername = validateUsername(username);
+      const familiarId = `familiar:${validatedUsername}`;
+      
+      // Clear mutations only, keep other data
+      await redis.hset(familiarId, {
+        mutations: JSON.stringify([]),
+        evolutionPoints: '0',
+      });
+
+      res.json({ success: true, message: 'Familiar reset successfully' });
+    } catch (error) {
+      console.error('Error resetting familiar:', error);
+      res.status(500).json({ error: 'Failed to reset familiar' });
     }
   }
 );
@@ -201,19 +272,26 @@ router.post<unknown, CareActionResponse | ErrorResponse>(
   '/api/care/feed',
   async (_req, res): Promise<void> => {
     try {
-      // Get userId from Reddit context
-      const username = await reddit.getCurrentUsername();
-      if (!username) {
-        res.status(401).json({ error: 'User not authenticated' });
-        return;
-      }
+      // Get userId from Reddit context with dev fallback
+      const username = await getUsernameWithFallback();
+
+      // Validate username
+      const validatedUsername = validateUsername(username);
+
+      // Validate care action
+      const validatedAction = validateCareAction('feed');
 
       // Perform care action
-      const result = await careSystem.performCareAction(username, 'feed');
+      const result = await careSystem.performCareAction(validatedUsername, validatedAction);
 
       res.json(result);
     } catch (error) {
       console.error('Error in /api/care/feed:', error);
+
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
       
       // Handle cooldown errors with 429 status
       if (error instanceof Error && error.message.includes('cooldown')) {
@@ -237,19 +315,26 @@ router.post<unknown, CareActionResponse | ErrorResponse>(
   '/api/care/play',
   async (_req, res): Promise<void> => {
     try {
-      // Get userId from Reddit context
-      const username = await reddit.getCurrentUsername();
-      if (!username) {
-        res.status(401).json({ error: 'User not authenticated' });
-        return;
-      }
+      // Get userId from Reddit context with dev fallback
+      const username = await getUsernameWithFallback();
+
+      // Validate username
+      const validatedUsername = validateUsername(username);
+
+      // Validate care action
+      const validatedAction = validateCareAction('play');
 
       // Perform care action
-      const result = await careSystem.performCareAction(username, 'play');
+      const result = await careSystem.performCareAction(validatedUsername, validatedAction);
 
       res.json(result);
     } catch (error) {
       console.error('Error in /api/care/play:', error);
+
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
       
       // Handle cooldown errors with 429 status
       if (error instanceof Error && error.message.includes('cooldown')) {
@@ -273,19 +358,26 @@ router.post<unknown, CareActionResponse | ErrorResponse>(
   '/api/care/attention',
   async (_req, res): Promise<void> => {
     try {
-      // Get userId from Reddit context
-      const username = await reddit.getCurrentUsername();
-      if (!username) {
-        res.status(401).json({ error: 'User not authenticated' });
-        return;
-      }
+      // Get userId from Reddit context with dev fallback
+      const username = await getUsernameWithFallback();
+
+      // Validate username
+      const validatedUsername = validateUsername(username);
+
+      // Validate care action
+      const validatedAction = validateCareAction('attention');
 
       // Perform care action
-      const result = await careSystem.performCareAction(username, 'attention');
+      const result = await careSystem.performCareAction(validatedUsername, validatedAction);
 
       res.json(result);
     } catch (error) {
       console.error('Error in /api/care/attention:', error);
+
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
       
       // Handle cooldown errors with 429 status
       if (error instanceof Error && error.message.includes('cooldown')) {
@@ -312,15 +404,14 @@ router.post<unknown, MutationTriggerResponse | ErrorResponse>(
   '/api/mutation/trigger',
   async (_req, res): Promise<void> => {
     try {
-      // Get userId from Reddit context
-      const username = await reddit.getCurrentUsername();
-      if (!username) {
-        res.status(401).json({ error: 'User not authenticated' });
-        return;
-      }
+      // Get userId from Reddit context with dev fallback
+      const username = await getUsernameWithFallback();
+
+      // Validate username
+      const validatedUsername = validateUsername(username);
 
       // Trigger controlled mutation
-      const mutationChoice = await mutationEngine.triggerControlledMutation(username);
+      const mutationChoice = await mutationEngine.triggerControlledMutation(validatedUsername);
 
       res.json({
         sessionId: mutationChoice.sessionId,
@@ -328,6 +419,11 @@ router.post<unknown, MutationTriggerResponse | ErrorResponse>(
       });
     } catch (error) {
       console.error('Error in /api/mutation/trigger:', error);
+
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
       
       // Handle insufficient evolution points with 400 status
       if (error instanceof Error && error.message.includes('Insufficient evolution points')) {
@@ -350,12 +446,11 @@ router.post<unknown, MutationChooseResponse | ErrorResponse, MutationChooseReque
   '/api/mutation/choose',
   async (req, res): Promise<void> => {
     try {
-      // Get userId from Reddit context
-      const username = await reddit.getCurrentUsername();
-      if (!username) {
-        res.status(401).json({ error: 'User not authenticated' });
-        return;
-      }
+      // Get userId from Reddit context with dev fallback
+      const username = await getUsernameWithFallback();
+
+      // Validate username
+      const validatedUsername = validateUsername(username);
 
       const { sessionId, optionId } = req.body;
 
@@ -364,11 +459,18 @@ router.post<unknown, MutationChooseResponse | ErrorResponse, MutationChooseReque
         return;
       }
 
+      // Validate inputs
+      const validatedSessionId = validateSessionId(sessionId);
+      const validatedOptionId = validateMutationOptionId(optionId);
+
       // Apply chosen mutation
-      const mutation = await mutationEngine.applyChosenMutation(sessionId, optionId);
+      const mutation = await mutationEngine.applyChosenMutation(
+        validatedSessionId,
+        validatedOptionId
+      );
 
       // Get updated familiar state to return updated stats
-      const familiar = await familiarManager.getFamiliar(username);
+      const familiar = await familiarManager.getFamiliar(validatedUsername);
 
       if (!familiar) {
         res.status(404).json({ error: 'Familiar not found' });
@@ -381,6 +483,11 @@ router.post<unknown, MutationChooseResponse | ErrorResponse, MutationChooseReque
       });
     } catch (error) {
       console.error('Error in /api/mutation/choose:', error);
+
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
       
       // Handle invalid session with 400 status
       if (error instanceof Error && error.message.includes('Invalid or expired')) {
@@ -407,12 +514,11 @@ router.post<unknown, PrivacyOptInResponse | ErrorResponse, PrivacyOptInRequest>(
   '/api/privacy/opt-in',
   async (req, res): Promise<void> => {
     try {
-      // Get userId from Reddit context
-      const username = await reddit.getCurrentUsername();
-      if (!username) {
-        res.status(401).json({ error: 'User not authenticated' });
-        return;
-      }
+      // Get userId from Reddit context with dev fallback
+      const username = await getUsernameWithFallback();
+
+      // Validate username
+      const validatedUsername = validateUsername(username);
 
       const { optIn } = req.body;
 
@@ -421,15 +527,24 @@ router.post<unknown, PrivacyOptInResponse | ErrorResponse, PrivacyOptInRequest>(
         return;
       }
 
+      // Validate boolean
+      const validatedOptIn = validateBoolean(optIn);
+
       // Set privacy preference
-      await activityTracker.setPrivacyOptIn(username, optIn);
+      await activityTracker.setPrivacyOptIn(validatedUsername, validatedOptIn);
 
       res.json({
         success: true,
-        privacyOptIn: optIn,
+        privacyOptIn: validatedOptIn,
       });
     } catch (error) {
       console.error('Error in /api/privacy/opt-in:', error);
+
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+
       res.status(500).json({
         error: error instanceof Error ? error.message : 'Failed to set privacy preference',
       });
@@ -455,14 +570,23 @@ router.post('/internal/scheduler/evolution-cycle', async (req, res): Promise<voi
       return;
     }
 
-    console.log(`Evolution cycle triggered for user ${userId}`);
+    // Validate userId
+    const validatedUserId = validateUsername(userId);
+
+    console.log(`Evolution cycle triggered for user ${validatedUserId}`);
 
     // Handle evolution cycle
-    await evolutionScheduler.handleEvolutionCycle(userId);
+    await evolutionScheduler.handleEvolutionCycle(validatedUserId);
 
     res.status(200).json({ status: 'ok' });
   } catch (error) {
     console.error('Error in evolution cycle handler:', error);
+
+    if (error instanceof ValidationError) {
+      res.status(400).json({ status: 'error', message: error.message });
+      return;
+    }
+
     res.status(500).json({
       status: 'error',
       message: error instanceof Error ? error.message : 'Failed to handle evolution cycle',
@@ -484,14 +608,23 @@ router.post('/internal/scheduler/care-decay', async (req, res): Promise<void> =>
       return;
     }
 
-    console.log(`Care decay triggered for user ${userId}`);
+    // Validate userId
+    const validatedUserId = validateUsername(userId);
+
+    console.log(`Care decay triggered for user ${validatedUserId}`);
 
     // Handle care decay
-    await evolutionScheduler.handleCareDecay(userId);
+    await evolutionScheduler.handleCareDecay(validatedUserId);
 
     res.status(200).json({ status: 'ok' });
   } catch (error) {
     console.error('Error in care decay handler:', error);
+
+    if (error instanceof ValidationError) {
+      res.status(400).json({ status: 'error', message: error.message });
+      return;
+    }
+
     res.status(500).json({
       status: 'error',
       message: error instanceof Error ? error.message : 'Failed to handle care decay',

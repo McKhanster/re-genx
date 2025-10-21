@@ -1,5 +1,6 @@
-import type { CreatureStats } from '../../shared/types/api';
+import type { CreatureStats, FamiliarStats } from '../../shared/types/api';
 import { StatFeedback } from './stat-feedback';
+import { soundManager } from '../audio/sound-manager';
 
 /**
  * HUDDrawer - Fighter jet style Heads-Up Display
@@ -10,7 +11,7 @@ import { StatFeedback } from './stat-feedback';
  * - Non-intrusive overlay that doesn't block the view
  */
 export class HUDDrawer {
-  private container: HTMLElement;
+  private container!: HTMLElement;
   private menuPanel: HTMLElement | null = null;
   private menuVisible: boolean = false;
 
@@ -145,6 +146,9 @@ export class HUDDrawer {
    */
   public toggleMenu(): void {
     this.menuVisible = !this.menuVisible;
+    
+    // Play click sound
+    soundManager.playSound('click', 0.5);
     
     if (this.menuPanel) {
       this.menuPanel.classList.toggle('visible', this.menuVisible);
@@ -281,16 +285,21 @@ export class HUDDrawer {
    * Shows color-coded indicators for stat changes (green/red)
    * Displays floating numbers for stat changes
    */
-  public updateStats(stats: CreatureStats, previousStats?: CreatureStats): void {
+  public updateStats(stats: CreatureStats | FamiliarStats, previousStats?: CreatureStats | FamiliarStats): void {
     const display = document.getElementById('stats-display');
     if (!display) return;
+
+    // Determine which vitals stats to show based on the stats type
+    const vitalsStats = 'population' in (stats.vitals as any) 
+      ? ['health', 'population', 'mutationRate']
+      : ['health', 'happiness', 'energy'];
 
     const statCategories = [
       { name: 'Mobility', key: 'mobility', stats: ['speed', 'agility', 'endurance'] },
       { name: 'Senses', key: 'senses', stats: ['vision', 'hearing', 'smell'] },
       { name: 'Survival', key: 'survival', stats: ['attack', 'defense', 'stealth'] },
       { name: 'Cognition', key: 'cognition', stats: ['intelligence', 'social', 'adaptability'] },
-      { name: 'Vitals', key: 'vitals', stats: ['health', 'population', 'mutationRate'] },
+      { name: 'Vitals', key: 'vitals', stats: vitalsStats },
     ];
 
     let html = '';

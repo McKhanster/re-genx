@@ -331,12 +331,15 @@ function generateDefaultGeometry(
   isMobile: boolean
 ): MutationGeometry {
   const segments = isMobile ? 16 : 32;
-  const geometry = new THREE.SphereGeometry(0.3, segments, segments);
+  // Make default mutations much smaller and less visible
+  const geometry = new THREE.SphereGeometry(0.1, segments, segments);
 
   const material = new THREE.MeshPhongMaterial({
     color: 0xaaaaaa,
     emissive: 0x555555,
-    emissiveIntensity: 0.3,
+    emissiveIntensity: 0.1,
+    transparent: true,
+    opacity: 0.3, // Make it semi-transparent
   });
 
   return {
@@ -347,7 +350,7 @@ function generateDefaultGeometry(
       (Math.random() - 0.5) * 2,
       (Math.random() - 0.5) * 2
     ),
-    scale: new THREE.Vector3(1, 1, 1),
+    scale: new THREE.Vector3(0.5, 0.5, 0.5), // Make it smaller
     rotation: new THREE.Euler(0, 0, 0),
   };
 }

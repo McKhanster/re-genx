@@ -330,9 +330,9 @@ This document outlines the implementation tasks for Re-GenX, organized as increm
     - Animate numbers fading out over 1 second
     - _Requirements: 16.4_
 
-- [ ] 18. Build mutation choice UI
+- [x] 18. Build mutation choice UI
 
-  - [ ] 18.1 Create MutationChoiceUI component in `src/client/ui/mutation-choice.ts`
+  - [x] 18.1 Create MutationChoiceUI component in `src/client/ui/mutation-choice.ts`
 
     - Display "Evolve" button (costs 100 EP)
     - Show trait options when mutation triggered (3-5 options)
@@ -341,7 +341,7 @@ This document outlines the implementation tasks for Re-GenX, organized as increm
     - Show confirmation after selection
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ] 18.2 Implement mutation choice submission
+  - [x] 18.2 Implement mutation choice submission
     - Call `/api/mutation/trigger` when "Evolve" clicked
     - Display trait options returned from server
     - Call `/api/mutation/choose` when option selected
@@ -349,16 +349,16 @@ This document outlines the implementation tasks for Re-GenX, organized as increm
     - Update HUD with new stats
     - _Requirements: 8.4, 8.5_
 
-- [ ] 19. Implement client-side API integration
+- [x] 19. Implement client-side API integration
 
-  - [ ] 19.1 Create APIClient class in `src/client/api/api-client.ts`
+  - [x] 19.1 Create APIClient class in `src/client/api/api-client.ts`
 
     - Implement `fetchWithRetry()` with exponential backoff (3 retries)
     - Add methods for all API endpoints (getFamiliarState, performCareAction, triggerMutation, etc.)
     - Handle errors and display user-friendly messages
     - _Requirements: 18.4, 18.5_
 
-  - [ ] 19.2 Implement polling for state updates
+  - [x] 19.2 Implement polling for state updates
     - Poll `/api/familiar/state` every 5 seconds
     - Update familiar rendering when mutations change
     - Update HUD when stats or Care Meter change
@@ -366,9 +366,9 @@ This document outlines the implementation tasks for Re-GenX, organized as increm
     - Show neglect warning if Care Meter below 20
     - _Requirements: 3.4, 18.5_
 
-- [ ] 20. Add privacy consent dialog
+- [x] 20. Add privacy consent dialog
 
-  - [ ] 20.1 Create PrivacyDialog component in `src/client/ui/privacy-dialog.ts`
+  - [x] 20.1 Create PrivacyDialog component in `src/client/ui/privacy-dialog.ts`
 
     - Display dialog on first familiar creation
     - Explain personality reflection feature clearly
@@ -377,15 +377,15 @@ This document outlines the implementation tasks for Re-GenX, organized as increm
     - Allow changing preference later in settings
     - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5_
 
-  - [ ] 20.2 Implement privacy preference submission
+  - [x] 20.2 Implement privacy preference submission
     - Call `/api/privacy/opt-in` with user's choice
     - Store preference locally for UI display
     - Show confirmation message
     - _Requirements: 21.4, 21.5_
 
-- [ ] 21. Add mutation notifications
+- [x] 21. Add mutation notifications
 
-  - [ ] 21.1 Create notification system
+  - [x] 21.1 Create notification system
 
     - Display toast notification when uncontrolled mutation occurs
     - Show mutation type and affected stats
@@ -394,22 +394,22 @@ This document outlines the implementation tasks for Re-GenX, organized as increm
     - Display notification when Care Meter drops below 20
     - _Requirements: 11.4, 11.5_
 
-  - [ ] 21.2 Add removal warning system
+  - [x] 21.2 Add removal warning system
     - Display prominent warning when Care Meter reaches 0
     - Show countdown: "Familiar will be removed in X hours"
     - Provide clear call-to-action to care for familiar
     - _Requirements: 5.3, 5.4_
 
-- [ ] 22. Implement data persistence and recovery
+- [-] 22. Implement data persistence and recovery
 
-  - [ ] 22.1 Add Redis retry logic wrapper
+  - [x] 22.1 Add Redis retry logic wrapper
 
     - Create `safeRedisOperation()` function with 3 retries and exponential backoff
     - Wrap all Redis operations in retry logic
     - Log failures after all retries exhausted
     - _Requirements: 18.4_
 
-  - [ ] 22.2 Implement state restoration on page load
+  - [x] 22.2 Implement state restoration on page load
     - Fetch complete familiar state from Redis
     - Restore all mutations and apply to familiar
     - Restore Care Meter, Evolution Points, and stats
@@ -417,9 +417,9 @@ This document outlines the implementation tasks for Re-GenX, organized as increm
     - Complete within 2 seconds
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5_
 
-- [ ] 23. Add rate limiting and security
+- [x] 23. Add rate limiting and security
 
-  - [ ] 23.1 Implement rate limiter
+  - [x] 23.1 Implement rate limiter
 
     - Create RateLimiter class with in-memory request tracking
     - Limit to 100 requests per minute per user
@@ -428,16 +428,16 @@ This document outlines the implementation tasks for Re-GenX, organized as increm
     - Enforce 5-minute cooldown on care actions
     - _Requirements: 20.5_
 
-  - [ ] 23.2 Add input validation
+  - [x] 23.2 Add input validation
     - Validate all mutation parameters (ranges, types)
     - Validate care action types (feed, play, attention)
     - Sanitize user inputs to prevent injection
     - Validate familiar IDs before operations
     - _Requirements: Privacy and security from design_
 
-- [ ] 24. Implement mobile optimizations
+- [x] 24. Implement mobile optimizations
 
-  - [ ] 24.1 Optimize rendering for mobile
+  - [x] 24.1 Optimize rendering for mobile
 
     - Reduce particle counts by 50%
     - Use lower-poly geometry for mutations
@@ -445,30 +445,30 @@ This document outlines the implementation tasks for Re-GenX, organized as increm
     - Target 30fps minimum
     - _Requirements: 17.2, 17.4_
 
-  - [ ] 24.2 Optimize touch controls
+  - [x] 24.2 Optimize touch controls
     - Ensure all touch targets are 44x44px minimum (care buttons, HUD handle, mutation options)
     - Add visual feedback for touch interactions
     - Optimize HUD drawer for thumb accessibility
     - Test care action buttons on various screen sizes
     - _Requirements: 17.3, 17.5_
 
-- [ ] 25. Create Devvit post integration
+- [x] 25. Create Devvit post integration
 
-  - [ ] 25.1 Implement post creation in `src/devvit/main.tsx`
+  - [x] 25.1 Implement post creation in `src/devvit/main.tsx`
 
     - Create splash screen with "Play" button
     - Open webview in fullscreen when clicked
     - Pass user context to webview
     - _Requirements: Product requirements from steering files_
 
-  - [ ] 25.2 Add moderator menu action
+  - [x] 25.2 Add moderator menu action
     - Create menu action to manually create Re-GenX post
     - Verify moderator permissions
     - _Requirements: Product requirements from steering files_
 
-- [ ] 26. Polish and final integration
+- [-] 26. Polish and final integration
 
-  - [ ] 26.1 Add loading states
+  - [x] 26.1 Add loading states
 
     - Show loading spinner while fetching familiar data
     - Display progress during familiar initialization
@@ -476,7 +476,7 @@ This document outlines the implementation tasks for Re-GenX, organized as increm
     - Show loading state during care actions
     - _Requirements: User experience_
 
-  - [ ] 26.2 Implement error messages
+  - [x] 26.2 Implement error messages
 
     - Display user-friendly error messages for all failure cases
     - Add retry buttons for recoverable errors
@@ -484,7 +484,7 @@ This document outlines the implementation tasks for Re-GenX, organized as increm
     - Display clear message when familiar is removed
     - _Requirements: Error handling from design_
 
-  - [ ] 26.3 Add sound effects (optional)
+  - [x] 26.3 Add sound effects (optional)
     - Subtle sound when mutation completes
     - Happy sound for care actions
     - Sad sound when Care Meter drops below 20

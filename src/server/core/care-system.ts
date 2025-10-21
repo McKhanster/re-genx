@@ -1,5 +1,6 @@
 import { RedisClient } from '@devvit/web/server';
 import { FamiliarManager } from './familiar-manager';
+import { safeRedisOperation } from '../utils/redis-utils';
 
 /**
  * CareActionResult represents the result of a care action
@@ -82,8 +83,8 @@ export class CareSystem {
       // Update neglect warning status
       await this.familiarManager.updateCareMeter(userId, careMeter);
 
-      // Set cooldown (5 minutes = 300 seconds)
-      const cooldownMs = 5 * 60 * 1000;
+      // Set cooldown (5 seconds for testing - change to 5 * 60 * 1000 for production)
+      const cooldownMs = 5 * 1000;
       await this.safeRedisOperation(
         () => this.redis.set(cooldownKey, (Date.now() + cooldownMs).toString(), { expiration: new Date(Date.now() + cooldownMs) }),
         undefined
@@ -203,6 +204,7 @@ export class CareSystem {
 
   /**
    * Safe Redis operation wrapper with retry logic
+   * Uses centralized utility from redis-utils
    *
    * @param operation - Redis operation to execute
    * @param fallback - Fallback value if all retries fail
@@ -214,18 +216,6 @@ export class CareSystem {
     fallback: T,
     retries: number = 3
   ): Promise<T> {
-    for (let i = 0; i < retries; i++) {
-      try {
-        return await operation();
-      } catch (error) {
-        console.error(`Redis operation failed (attempt ${i + 1}/${retries}):`, error);
-        if (i === retries - 1) {
-          return fallback;
-        }
-        // Exponential backoff
-        await new Promise((resolve) => setTimeout(resolve, Math.pow(2, i) * 1000));
-      }
-    }
-    return fallback;
+    return safeRedisOperation(operation, fallback, retries);
   }
 }

@@ -213,7 +213,10 @@ export function calculateRadiusOffset(
   // Combine octaves with decreasing amplitude
   const combined = octave1 * 0.5 + octave2 * 0.3 + octave3 * 0.2;
 
-  return combined * amplitude;
+  // Apply smoothstep function to reduce extreme values (warts)
+  const smoothed = combined * combined * (3 - 2 * combined);
+
+  return smoothed * amplitude;
 }
 
 /**

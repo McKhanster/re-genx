@@ -2,6 +2,8 @@
  * CareActionUI - Handles care action buttons and cooldown management
  */
 
+import { soundManager } from '../audio/sound-manager';
+
 export interface CareActionResult {
   careMeter: number;
   evolutionPoints: number;
@@ -95,7 +97,13 @@ export class CareActionUI {
       return;
     }
 
+    const button = this.getButtonForAction(action);
+    
     try {
+      // Show loading state
+      button.classList.add('loading');
+      button.disabled = true;
+
       const response = await fetch(`/api/care/${action}`, { method: 'POST' });
 
       if (!response.ok) {
@@ -105,8 +113,14 @@ export class CareActionUI {
 
       const data: CareActionResult = await response.json();
 
+      // Remove loading state
+      button.classList.remove('loading');
+
       // Set cooldown (5 minutes)
       this.setCooldown(action, 5 * 60 * 1000);
+
+      // Play sound effect for care action
+      soundManager.playSound(action, 0.7);
 
       // Show feedback animations
       this.showFeedback(data.careMeterIncrease, data.evolutionPointsGained);
@@ -125,6 +139,11 @@ export class CareActionUI {
       }
     } catch (error) {
       console.error(`Care action ${action} failed:`, error);
+      
+      // Remove loading state on error
+      button.classList.remove('loading');
+      button.disabled = false;
+      
       this.showError(
         error instanceof Error ? error.message : 'Failed to perform action'
       );

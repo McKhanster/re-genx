@@ -1,5 +1,9 @@
 import { context, reddit } from '@devvit/web/server';
 
+/**
+ * Creates a Re-GenX post with splash screen
+ * The splash screen invites players to nurture their own personal familiar
+ */
 export const createPost = async () => {
   const { subredditName } = context;
   if (!subredditName) {
@@ -12,14 +16,14 @@ export const createPost = async () => {
       appDisplayName: 'Re-GenX',
       backgroundUri: 'default-splash.png',
       buttonLabel: 'Play',
-      description: 'Evolve your creature with 24 other players',
-      heading: 'Welcome to Re-GenX!',
+      description: 'Nurture your own evolving familiar. Feed, play, and watch it grow into something unique.',
+      heading: 'Your Familiar Awaits',
       appIconUri: 'default-icon.png',
     },
     postData: {
       gameState: 'initial',
     },
     subredditName: subredditName,
-    title: 'Re-GenX - Collaborative Creature Evolution',
+    title: 'Re-GenX - Your Personal Familiar',
   });
 };

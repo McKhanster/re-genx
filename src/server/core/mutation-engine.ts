@@ -1,6 +1,7 @@
 import { RedisClient } from '@devvit/web/server';
 import { MutationData, MutationTrait, StatEffects, FamiliarStats } from '../../shared/types/api';
 import { ActivityTracker, ActivityPattern } from './activity-tracker';
+import { safeRedisOperation } from '../utils/redis-utils';
 
 /**
  * TraitOption represents a single trait choice for controlled mutations
@@ -863,6 +864,7 @@ export class MutationEngine {
 
   /**
    * Safe Redis operation wrapper with retry logic
+   * Uses centralized utility from redis-utils
    *
    * @param operation - Redis operation to execute
    * @param fallback - Fallback value if all retries fail
@@ -874,18 +876,6 @@ export class MutationEngine {
     fallback: T,
     retries: number = 3
   ): Promise<T> {
-    for (let i = 0; i < retries; i++) {
-      try {
-        return await operation();
-      } catch (error) {
-        console.error(`Redis operation failed (attempt ${i + 1}/${retries}):`, error);
-        if (i === retries - 1) {
-          return fallback;
-        }
-        // Exponential backoff
-        await new Promise((resolve) => setTimeout(resolve, Math.pow(2, i) * 1000));
-      }
-    }
-    return fallback;
+    return safeRedisOperation(operation, fallback, retries);
   }
 }
