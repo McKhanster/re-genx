@@ -24,7 +24,7 @@ export class CreatureRenderer {
     this.scene = scene;
     this.isMobile = isMobile;
     this.mutationMeshes = new Map();
-    
+
     // Set LOD level based on device
     this.lodLevel = isMobile ? 'low' : 'high';
     this.qualityMultiplier = isMobile ? 0.5 : 1.0;
@@ -78,7 +78,7 @@ export class CreatureRenderer {
     positionAttribute.needsUpdate = true;
     geometry.computeVertexNormals();
 
-    // Create semi-gloss platinum material with subtle glow
+    // Create fully opaque material - impenetrable skin
     const material = new THREE.MeshPhongMaterial({
       color: 0xe5e4e2, // Platinum color
       emissive: 0xaaaaaa, // Subtle warm glow
@@ -86,6 +86,8 @@ export class CreatureRenderer {
       shininess: 80, // Semi-gloss finish
       specular: 0xffffff, // Bright specular highlights for metallic look
       flatShading: false, // Smooth shading for glossy look
+      transparent: false, // Fully opaque
+      opacity: 1.0, // Solid - impenetrable
     });
 
     const mesh = new THREE.Mesh(geometry, material);
@@ -174,10 +176,10 @@ export class CreatureRenderer {
    */
   public setLODLevel(level: 'high' | 'medium' | 'low'): void {
     if (this.lodLevel === level) return;
-    
+
     this.lodLevel = level;
     this.qualityMultiplier = level === 'low' ? 0.5 : level === 'medium' ? 0.75 : 1.0;
-    
+
     console.log(`LOD level changed to: ${level} (quality: ${this.qualityMultiplier})`);
   }
 

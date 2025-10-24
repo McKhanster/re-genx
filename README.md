@@ -1,14 +1,14 @@
 # Re-GenX: Personal Creature Companion
 
-> **A Tamagotchi-style creature care game for Reddit** where you nurture your own unique familiar through feeding, playing, and giving attention. Watch your lustrous platinum-surfaced creature evolve with player-directed mutations in a dramatic 3D spotlight environment.
+> **A Tamagotchi-style creature care game for Reddit** where you nurture your own unique familiar through feeding, playing, and giving attention. Watch your lustrous, living creature evolve with player-directed mutations in a dramatic 3D spotlight environment.
 
-**🎮 Play directly on Reddit** • **🎨 Stunning Three.js 3D graphics** • **🧬 Player-controlled evolution** • **🔒 Privacy-first design** • **🔊 Procedural sound system**
+**🎮 Play directly on Reddit** • **🎨 Stunning Three.js 3D graphics** • **🧬 Player-controlled evolution** • **🔒 Privacy-first design** • **🔊 Procedural sound system** • **✨ Organic blob creature**
 
 ---
 
 ## What is Re-GenX?
 
-Re-GenX is a **personal creature companion game** built for Reddit where you care for your own unique familiar—a living, pulsating platinum blob creature displayed in a dramatic spotlight setting. Like a digital Tamagotchi, you must actively nurture your familiar through feeding, playing, and giving attention, or risk having it removed due to neglect.
+Re-GenX is a **personal creature companion game** built for Reddit where you care for your own unique familiar—a living, pulsating organic blob creature displayed in a dramatic spotlight setting. Like a digital Tamagotchi, you must actively nurture your familiar through feeding, playing, and giving attention, or risk having it removed due to neglect.
 
 Your familiar exists in a **dynamic biome environment** (jungle, rocky mountain, desert, ocean, or cave) on a circular platform, surrounded by complete darkness beyond a 10-meter visibility radius. You can **rotate the camera 360°** around your familiar to view it from all angles at eye level (4 feet above ground), creating an intimate, theatrical viewing experience reminiscent of a museum exhibit or stage performance.
 
@@ -18,9 +18,17 @@ The game features **instant state restoration**—when you return to the game, y
 1. **Care for your familiar** - Feed, play, and give attention to earn Evolution Points and maintain Care Meter
 2. **Earn Evolution Points** - Each care action rewards 5-15 EP based on the action type
 3. **Trigger mutations** - Spend 100 EP to choose from 3-5 trait options (legs, color, size, appendages, patterns)
-4. **Watch it evolve** - Your familiar transforms with 2-3 second animations showing your chosen traits
+4. **Watch it evolve** - Your familiar transforms with 2-3 second elastic animations showing your chosen traits
 5. **Manage stats** - Every mutation has trade-offs affecting mobility, senses, survival, cognition, and vitals
 6. **Avoid neglect** - Keep Care Meter above 0 or your familiar will be removed after 24 hours
+
+**Advanced Visual Features:**
+- **Living Plasma Creature**: Voronoi cell-based geometry with custom GLSL plasma shaders creates a truly biological, pulsating organism
+- **Dynamic Shader System**: Real-time color gradients, Fresnel rim lighting, and animated glow effects driven by custom vertex and fragment shaders
+- **Procedural Animation**: Multi-octave Simplex noise (3 octaves) drives organic vertex motion for truly lifelike breathing and pulsating movement
+- **Post-Processing Pipeline**: Atmospheric bloom effects enhance the ethereal glow of your familiar
+- **Adaptive Cell Geometry**: 40-90 Voronoi cells on mobile/desktop create organic, biological surface structure
+- **Dynamic Care States**: Creature appearance changes based on care level (bright cyan plasma when happy, dull gray when sad)
 
 ---
 
@@ -29,14 +37,16 @@ The game features **instant state restoration**—when you return to the game, y
 **New to Re-GenX?** Here's everything you need to know in 30 seconds:
 
 1. **Click "Play"** on a Re-GenX post to launch the game in fullscreen
-2. **Your familiar appears** as a glowing platinum blob on a circular platform, surrounded by darkness
-3. **Drag to rotate** the camera 360° around your familiar at eye level
+2. **Your familiar appears** as a living, pulsating organic blob on a circular platform, surrounded by darkness
+3. **Drag to rotate** the camera 360° around your familiar at eye level (touch and swipe on mobile)
 4. **Click "▼ MENU"** at the top-center to open care actions
-5. **Feed, Play, or give Attention** to earn Evolution Points and keep your familiar happy
+5. **Feed, Play, or give Attention** to earn Evolution Points and keep your familiar happy (5-minute cooldowns)
 6. **Spend 100 EP** on the "⚡ Evolve" button to choose mutations and transform your familiar
 7. **Keep Care Meter above 0** or your familiar will be removed after 24 hours
 
 **That's it!** The game auto-saves and restores your complete familiar state (including all mutations) in under 2 seconds. Just remember to check in regularly to keep your familiar healthy.
+
+**Sound:** Adjust volume or mute sounds using the speaker icon (🔊) in the top-right corner.
 
 ---
 
@@ -53,23 +63,38 @@ The game features **instant state restoration**—when you return to the game, y
 
 Re-GenX stands out as an innovative creature care game with several groundbreaking features:
 
-**🎭 Theatrical Presentation**: Your familiar is displayed like a museum exhibit or stage performance—spotlit from above on a circular platform, surrounded by complete darkness. The dramatic lighting (8.0 intensity spotlight from 12 units above) and 360° camera rotation create an intimate, focused viewing experience unlike typical 3D games.
+**🎭 Theatrical Presentation**: Your familiar is displayed like a museum exhibit or stage performance—spotlit from above (20.0 intensity from 12 units high) on a circular platform, surrounded by complete darkness. The dramatic lighting with subtle atmospheric bloom creates an intimate, focused viewing experience unlike typical 3D games.
 
-**💎 Ultra-Smooth Platinum Surface**: The creature features exceptionally high-detail geometry (96 segments on desktop, 48 on mobile) with a lustrous semi-gloss platinum finish (shininess 80). Multi-octave Simplex noise (3 octaves at 1x, 2x, 4x frequency) creates truly organic, fluid motion with per-vertex animation—your familiar literally breathes and pulses with life.
+**💎 Living Plasma Organism**: The creature is a biological, cell-based structure (1.5-unit radius) that literally breathes and pulses with life through advanced shader technology:
+- **Voronoi Cell Geometry**: 40-90 organic cells create a biological surface structure with natural irregularity
+- **Skeletal Frame Visualization**: Glowing cyan skeletal structure displayed next to the creature reveals its internal framework, like viewing an X-ray or anatomical diagram
+- **Custom GLSL Plasma Shaders**: Real-time vertex and fragment shaders generate dynamic color gradients and animated glow effects
+- **Fresnel Rim Lighting**: Edges glow brighter when viewed at angles, creating an ethereal, living appearance
+- **Multi-Octave Simplex Noise**: 3 octaves at 1x, 2x, 4x frequency create truly organic, fluid motion with per-vertex animation
+- **Gentle Vertex Deformation**: 6% amplitude creates refined, graceful movement across the entire surface
+- **Dynamic Pulsation**: Overall scale varies by 8% using sine wave for breathing effect
+- **Adaptive Color Palettes**: Shader-driven color transitions based on care state (cyan/magenta/purple when happy, gray when sad)
+- **Time-Based Animation**: Plasma effects animate continuously with customizable speed and intensity
 
-**🎮 Tamagotchi Meets 3D**: Combines the emotional attachment of classic virtual pets with stunning Three.js 3D graphics. Your familiar's appearance dynamically changes based on care level—bright platinum (#e5e4e2) when happy, light gray when neutral, dull gray when sad, with corresponding changes in glow intensity and vertical position.
+**🎮 Tamagotchi Meets 3D**: Combines the emotional attachment of classic virtual pets with stunning Three.js 3D graphics. Your familiar's appearance dynamically changes based on care level—bright cyan-white (#aaddff) with active pulsing when happy (Care Meter 50-100), light gray when neutral (20-50), dull gray when sad (0-20), with corresponding changes in glow intensity (0.8 to 0.1) and vertical position (1.2 to 1.0 units).
 
-**🧬 Player-Directed Evolution**: Unlike random mutation systems, you choose exactly which traits to evolve. Spend 100 Evolution Points to select from 3-5 trait options in categories like legs, color, size, appendages, or patterns. Each choice affects stats with realistic trade-offs (e.g., larger size = more attack/defense but less speed).
+**🧬 Player-Directed Evolution**: Unlike random mutation systems, you choose exactly which traits to evolve. Spend 100 Evolution Points to select from 3-5 trait options in categories like legs, color, size, appendages, or patterns. Each mutation applies with 85-95% control (5-15% randomness for organic feel) and animates over 2-3 seconds with elastic ease-out effects.
 
-**📊 Real-Time Visual Feedback**: Every action has immediate visual feedback—floating numbers show stat changes with color coding (green for increases, red for decreases), buttons pulse when clicked with glow effects, the familiar animates in response to care (eating, bouncing, happy pulse), and toast notifications keep you informed of all events.
+**📊 Real-Time Visual Feedback**: Every action has immediate visual feedback—floating numbers show stat changes with color coding (green for increases, red for decreases), buttons pulse when clicked with glow effects, the familiar animates in response to care (eating, bouncing, happy pulse), and toast notifications slide down from the top to keep you informed of all events.
 
 **🔒 Privacy-First Design**: Optional personality reflection system that analyzes your public Reddit posts to influence mutations, but only with explicit consent shown in a clear dialog on first play. You can opt out anytime for completely random mutations. Only public posts from the last 30 days are analyzed, never browsing history or private data.
 
 **📱 Mobile-First Architecture**: Automatically detects your device and adjusts quality—30fps target on mobile with 48-segment geometry, 60fps on desktop with 96-segment geometry. Touch controls work seamlessly alongside mouse controls. LOD (Level of Detail) system dynamically adjusts quality multiplier (0.5 on mobile, 1.0 on desktop).
 
-**⚡ Instant State Restoration**: When you reload the game, your complete familiar state (including all mutations, stats, biome, and care level) loads in under 2 seconds. All applied mutations are automatically restored from Redis with their exact geometry and positioning.
+**⚡ Instant State Restoration**: When you reload the game, your complete familiar state (including all mutations, stats, biome, and care level) loads in under 2 seconds with a loading indicator. All applied mutations are automatically restored from Redis with their exact geometry and positioning.
 
 **🔊 Procedural Sound System**: All audio generated in real-time using Web Audio API without any external files. Six distinct sound effects for actions (mutation, feed, play, attention, sad, click) plus five unique ambient biome soundscapes (jungle birds, mountain wind, desert breeze, ocean waves, cave drips). Independent volume controls for master and ambient sounds with persistent settings.
+
+**✨ Advanced Rendering Pipeline**: Post-processing effects create a unique visual style:
+- **Atmospheric Bloom**: Subtle bloom effect (strength 0.8-1.2, radius 0.4, threshold 0.5) enhances bright areas for ethereal glow
+- **Adaptive Quality**: Automatically adjusts effect intensity based on device performance
+- **Efficient Rendering**: Uses EffectComposer for optimized multi-pass rendering
+- **Mobile Optimization**: Reduces bloom intensity and resolution on mobile devices
 
 ## How to Play
 
@@ -78,13 +103,13 @@ Re-GenX stands out as an innovative creature care game with several groundbreaki
 1. **Launch the Game**: 
    - Find a Re-GenX post on Reddit
    - Click the "Play" button to launch the game in fullscreen mode
-   - The 3D scene loads with your familiar at center stage under a dramatic spotlight
+   - The 3D scene loads with your familiar at center stage under a dramatic spotlight (20.0 intensity from 12 units above)
 
 2. **Meet Your Familiar**: 
-   - If this is your first time, the game automatically creates your personal platinum blob creature
+   - If this is your first time, the game automatically creates your personal organic blob creature
    - Your familiar starts with a Care Meter at 100 and 0 Evolution Points
    - A random biome environment is selected (jungle, rocky mountain, desert, ocean, or cave)
-   - The creature appears as a lustrous platinum sphere (1.5-unit radius) with gentle pulsating animation
+   - The creature appears as a living, pulsating organic blob (1.5-unit radius) with gentle breathing animation driven by multi-octave Simplex noise
 
 3. **Privacy Choice** (First Time Only): 
    - A dialog appears asking if you want to enable "Personality Reflection"
@@ -97,7 +122,7 @@ Re-GenX stands out as an innovative creature care game with several groundbreaki
    - **Desktop**: Click and drag left/right to orbit 360° around your familiar (0.005 radians per pixel)
    - **Mobile**: Touch and swipe left/right to rotate the camera
    - The camera stays at eye level (1.2 units/4 feet above ground) at 8-unit radius
-   - Camera looks slightly downward to see both creature and circular ground platform (5-unit radius)
+   - Camera looks slightly downward at point (0, 0.5, 0) to see both creature and circular ground platform (5-unit radius)
 
 5. **Open the HUD Menu**: 
    - Click the "▼ MENU" button at the top-center of the screen (changes to "▲ CLOSE" when open)
@@ -105,11 +130,11 @@ Re-GenX stands out as an innovative creature care game with several groundbreaki
    - Press ESC key or click "▲ CLOSE" to hide the menu
 
 6. **Adjust Sound Settings** (Optional):
-   - Open the HUD menu and look for the Sound Settings section
-   - Adjust master volume (overall game volume)
-   - Adjust ambient volume (biome background sounds)
-   - Toggle sounds on/off with the enable/disable button
-   - Settings are saved automatically to your browser
+   - Click the speaker icon (🔊) in the top-right corner to open sound settings
+   - Adjust master volume (overall game volume, default 70%)
+   - Adjust ambient volume (biome background sounds, default 30%)
+   - Toggle sounds on/off with the enable/disable checkbox
+   - Settings are saved automatically to your browser's localStorage
 
 ### Core Gameplay: Care for Your Familiar
 
@@ -227,8 +252,9 @@ Once you've earned 100 Evolution Points through care actions, you can trigger a 
 - **Cave**: Dark rocky floor (#2a2a2a, shininess 3) with stalactites (hanging cones), stalagmites (upward cones), and glowing cyan crystals (#00ffff emissive) (4-8 objects on mobile, 8-16 on desktop)
 
 **Atmospheric Effects:**
-- Single powerful spotlight from directly above (position: 0, 12, 0) with 8.0 intensity, 60° cone angle (Math.PI/3), 0.3 penumbra, decay 1.0, distance 30
+- Single powerful spotlight from directly above (position: 0, 12, 0) with 20.0 intensity, 60° cone angle (Math.PI/3), 0.2 penumbra for sharper edges, decay 0.8 for brighter scene, distance 35
 - Subtle ambient light (0x404040 at 0.2 intensity) for gentle fill without washing out shadows
+- Subtle atmospheric bloom (strength 0.8-1.2, radius 0.4, threshold 0.5) enhances bright areas without overwhelming the scene
 - Linear fog (THREE.Fog) creates complete darkness from 10 to 20 meters
 - Pure black void background (#000000) for theatrical presentation
 - Your familiar's subtle warm emissive glow (#aaaaaa) pulses between 0.1-0.5 intensity at 1.5 Hz
@@ -272,19 +298,19 @@ Once you've earned 100 Evolution Points through care actions, you can trigger a 
 
 Re-GenX stands out as an innovative creature care game with several groundbreaking features:
 
-**🎭 Theatrical Presentation**: Your familiar is displayed like a museum exhibit or stage performance—spotlit from above on a circular platform, surrounded by complete darkness. The dramatic lighting and 360° camera rotation create an intimate, focused viewing experience unlike typical 3D games.
+**🎭 Theatrical Presentation**: Your familiar is displayed like a museum exhibit or stage performance—spotlit from above (20.0 intensity from 12 units high) on a circular platform, surrounded by complete darkness. The dramatic lighting with subtle atmospheric bloom creates an intimate, focused viewing experience unlike typical 3D games.
 
-**💎 Ultra-Smooth Platinum Surface**: The creature features exceptionally high-detail geometry (96 segments on desktop) with a lustrous semi-gloss platinum finish. Multi-octave Simplex noise creates truly organic, fluid motion with per-vertex animation—your familiar literally breathes and pulses with life.
+**💎 Living Plasma Organism with Advanced Shaders**: The creature features custom GLSL plasma shaders integrated with Voronoi cell geometry that create a truly biological, living appearance. The plasma vertex shader calculates view direction and normals for Fresnel-based rim lighting, while the plasma fragment shader generates dynamic color gradients, cell edge glow, and animated plasma effects. Multi-octave Simplex noise (3 octaves at 1x, 2x, 4x frequency) drives per-vertex animation—your familiar literally breathes and pulses with life through shader-driven effects. The cell-based geometry (40-90 cells) creates an organic, biological surface structure that enhances the living appearance.
 
-**🎮 Tamagotchi Meets 3D**: Combines the emotional attachment of classic virtual pets with stunning Three.js 3D graphics. Your familiar's appearance dynamically changes based on care level—bright and energetic when happy, dull and droopy when neglected.
+**🎮 Tamagotchi Meets 3D**: Combines the emotional attachment of classic virtual pets with stunning Three.js 3D graphics and cutting-edge shader technology. Your familiar's appearance dynamically changes based on care level—vibrant plasma colors (cyan/magenta/purple/teal) with active animation when happy (Care Meter 50-100), muted colors when neutral (20-50), dull gray with disabled plasma when sad (0-20), with corresponding changes in glow intensity (0.8 to 0.2) and vertical position (1.2 to 1.0 units).
 
-**🧬 Player-Directed Evolution**: Unlike random mutation systems, you choose exactly which traits to evolve. Spend Evolution Points to select from trait options (legs, color, size, appendages, patterns), with each choice affecting stats in meaningful ways with visible trade-offs.
+**🧬 Player-Directed Evolution**: Unlike random mutation systems, you choose exactly which traits to evolve. Spend 100 Evolution Points to select from 3-5 trait options in categories like legs, eyes, wings, spikes, tentacles, or horns. Each mutation applies with 85-95% control (5-15% randomness for organic feel) and animates over 2-3 seconds with elastic ease-out effects.
 
-**📊 Real-Time Visual Feedback**: Every action has immediate visual feedback—floating numbers show stat changes, buttons pulse when clicked, the familiar animates in response to care, and toast notifications keep you informed of all events.
+**📊 Real-Time Visual Feedback**: Every action has immediate visual feedback—floating numbers show stat changes with color coding (green for increases, red for decreases), buttons pulse when clicked with glow effects, the familiar animates in response to care (eating, bouncing, happy pulse), and toast notifications slide down from the top to keep you informed of all events.
 
-**🔒 Privacy-First Design**: Optional personality reflection system that analyzes your public Reddit posts to influence mutations, but only with explicit consent. You can opt out anytime for completely random mutations.
+**🔒 Privacy-First Design**: Optional personality reflection system that analyzes your public Reddit posts to influence mutations, but only with explicit consent shown in a clear dialog on first play. You can opt out anytime for completely random mutations. Only public posts from the last 30 days are analyzed, never browsing history or private data.
 
-**📱 Mobile-First Architecture**: Automatically detects your device and adjusts quality—30fps target on mobile with reduced geometry, 60fps on desktop with full detail. Touch controls work seamlessly alongside mouse controls.
+**📱 Mobile-First Architecture**: Automatically detects your device and adjusts quality—30fps target on mobile with 48-segment geometry, 60fps on desktop with 96-segment geometry. Touch controls work seamlessly alongside mouse controls. LOD (Level of Detail) system dynamically adjusts quality multiplier (0.5 on mobile, 1.0 on desktop).
 
 ---
 
@@ -380,7 +406,8 @@ Re-GenX features exceptionally high-detail geometry and sophisticated lighting:
 - **Semi-Gloss Finish**: Phong shading with bright specular highlights (shininess 80) creates wet, metallic look
 - **Fluid Organic Motion**: Multi-octave Simplex noise animation with gentle 10% amplitude for graceful movement
 - **Subtle Warm Glow**: Emissive glow (#aaaaaa) pulses between 0.1-0.5 intensity for ethereal presence
-- **Dramatic Spotlight**: Single powerful spotlight (8.0 intensity) from above creates beautiful highlights and shadows
+- **Dramatic Spotlight**: Single powerful spotlight (20.0 intensity) from above creates beautiful highlights and shadows
+- **Atmospheric Bloom**: Subtle post-processing bloom enhances bright areas without overwhelming the scene
 - **Enhanced Shadow Quality** (desktop): 2048x2048 shadow map with optimized bias for crisp, visible shadows
 - **Atmospheric Darkness**: Linear fog creates complete darkness beyond 10 meters
 
@@ -479,7 +506,48 @@ Re-GenX includes an optional personality reflection feature with full privacy co
 - ✅ Can opt out anytime (mutations become purely random)
 - ✅ All data cleared immediately on opt-out
 
-### 12. **Procedural Sound System with Web Audio API**
+### 12. **Advanced Shader System with Custom GLSL**
+
+Re-GenX features a sophisticated shader system that brings the familiar to life with dynamic visual effects:
+
+**Plasma Shader Material:**
+- **Custom ShaderMaterial**: Replaces standard Phong material with custom GLSL shaders for advanced effects
+- **Vertex Shader** (`plasma-vertex.glsl`):
+  - Calculates view direction from vertex to camera for Fresnel effects
+  - Transforms normals to world space for accurate lighting
+  - Passes world position and UV coordinates to fragment shader
+  - Enables dynamic rim lighting and edge glow effects
+- **Fragment Shader** (`plasma-fragment.glsl`):
+  - Creates living, breathing surface with animated color gradients
+  - Implements Fresnel effect for rim lighting (brighter edges when viewed at angles)
+  - Time-based animation for pulsating glow effects
+  - Customizable colors and intensities for different familiar states
+
+**Cell Geometry Generator:**
+- **Voronoi-Based Surface**: Creates organic, biological cell structure using Voronoi tessellation
+- **Fibonacci Sphere Distribution**: Evenly distributes cell centers using golden ratio for natural appearance
+- **Adaptive Cell Count**: 30-50 cells on mobile, 80-100 cells on desktop for optimal performance
+- **Irregular Polygons**: Each cell has 5-8 sides for natural, non-uniform appearance
+- **Surface Relief**: Depth variation (0.1-0.3) creates texture and dimension
+- **Solid Interior Geometry**: Triangles connect from origin to cell centers and vertices, creating a complete volumetric structure (not just a hollow shell)
+- **Proper UV Mapping**: Supports texturing with correct coordinate mapping
+- **Smooth Normals**: Calculates vertex normals for realistic lighting
+- **Ready for Integration**: Can replace standard sphere geometry for more biological look
+
+**Post-Processing Pipeline:**
+- **Bloom Effect**: Enhances bright areas with subtle glow (strength 0.8-1.2, radius 0.4, threshold 0.5)
+- **Adaptive Quality**: Automatically adjusts effect intensity based on device performance
+- **Efficient Rendering**: Uses EffectComposer for optimized multi-pass rendering
+- **Mobile Optimization**: Reduces bloom intensity and resolution on mobile devices
+
+**Technical Implementation:**
+- **ShaderMaterial Integration**: Custom shaders work seamlessly with Three.js lighting system
+- **Uniform Variables**: Time, colors, and intensities passed as uniforms for dynamic control
+- **Varying Variables**: Smooth interpolation of normals, positions, and UVs across surface
+- **WebGL Optimization**: Efficient shader code minimizes GPU load
+- **Fallback Support**: Gracefully degrades to standard materials if shaders fail
+
+### 13. **Procedural Sound System with Web Audio API**
 
 Re-GenX features a complete procedural sound system that generates all audio in real-time without external files:
 
@@ -516,7 +584,7 @@ Re-GenX features a complete procedural sound system that generates all audio in 
 - Exponential decay envelopes for natural sound fade-outs
 - Frequency modulation for organic, non-synthetic sound quality
 
-### 13. **Sound Settings Interface**
+### 14. **Sound Settings Interface**
 
 Re-GenX includes a user-friendly sound settings interface for complete audio control:
 
@@ -672,12 +740,39 @@ The current implementation includes a **fully functional personal familiar care 
 
 **Creature Rendering:**
 
-- **Living Platinum Blob**: Subtly-shaped 1.5-unit radius sphere with gentle noise-based vertex deformation (8% amplitude, 0.5 frequency for ultra-smooth surface)
-- **Ultra-High Detail Geometry**: 48 segments on mobile, 96 segments on desktop for exceptionally smooth surface
+- **Living Plasma Organism**: Biological cell-based structure (1.5-unit radius) with custom GLSL plasma shaders creating a truly living appearance
+- **Voronoi Cell Geometry** (Fully Integrated):
+  - Fibonacci sphere algorithm distributes 40-90 cells evenly across surface
+  - Each cell has 5-8 irregular sides for natural, organic appearance
+  - Depth variation (0.15-0.25) creates realistic surface relief and texture
+  - Solid interior geometry with complete volumetric structure (not hollow)
+  - Proper UV mapping and smooth vertex normals for realistic lighting
+  - Adaptive cell count: 40 cells on mobile, 90 cells on desktop
+- **Skeletal Frame System** (Fully Integrated):
+  - Glowing cyan lines create a biological skeletal structure visible next to the creature
+  - Positioned 4 units to the right of the main creature at the same height (1.2 units)
+  - Fibonacci sphere algorithm generates evenly distributed skeletal nodes
+  - Connects nearby points (within 0.8 radius) to form organic frame
+  - Each node connects to 6 nearest neighbors for natural web structure
+  - Adaptive complexity: 40 nodes on mobile, 90 nodes on desktop
+  - LineSegments geometry with glowing cyan material (0x00ffff, 90% opacity)
+  - Provides visual reference for the creature's internal structure
+  - Automatically disposed when creature renderer is cleaned up
+- **Custom GLSL Plasma Shaders** (Fully Integrated):
+  - **Plasma Vertex Shader**: Calculates view direction and normals for Fresnel rim lighting effects
+  - **Plasma Fragment Shader**: Generates dynamic color gradients, cell edge glow, and animated plasma effects
+  - **Plasma Shader Material**: Custom ShaderMaterial with time-based animation uniforms
+  - **Fresnel Effect**: Edges glow brighter when viewed at angles for ethereal, living appearance
+  - **Dynamic Color Palettes**: Shader-driven color transitions (cyan/magenta/purple/teal when happy, gray when sad)
+  - **Cell Edge Glow**: Configurable edge width (0.02) and glow intensity (1.5) for biological cell appearance
+  - **Time-Based Animation**: Plasma speed (0.3) creates continuous, organic color flow
+  - **Adaptive Quality**: Shader complexity adjusts based on device capabilities
 - **Advanced Organic Animation**: Multi-octave Simplex noise (3 octaves at 1x, 2x, 4x frequency) creates smooth, continuous vertex motion with 6% amplitude for refined, graceful movement
 - **Dynamic Pulsation**: Overall scale varies by 8% using sine wave, creating breathing effect
-- **Subtle Warm Glow**: Emissive intensity oscillates between 0.1 and 0.5 at 1.5 Hz for gentle living appearance
-- **Semi-Gloss Platinum Material**: Platinum (0xe5e4e2) Phong material with shininess 80 and bright white specular highlights for lustrous, metallic appearance
+- **Care State Visualization**: Appearance changes dramatically based on care level
+  - **Happy (50-100)**: Vibrant plasma colors (cyan/magenta/purple/teal), glow intensity 0.8, plasma enabled, positioned at 1.2 units
+  - **Neutral (20-50)**: Muted colors (muted cyan shades), glow intensity 0.5, plasma enabled, positioned at 1.1 units
+  - **Sad (0-20)**: Dull gray colors, glow intensity 0.2, plasma disabled, droops to 1.0 units
 
 **Biome System:**
 
@@ -791,8 +886,9 @@ The current implementation includes a **fully functional personal familiar care 
 
 **Scene & Lighting:**
 
-- **Dramatic Single Spotlight**: 8.0 intensity spotlight from 12 units above with 60° cone angle and 0.3 penumbra
+- **Dramatic Single Spotlight**: 20.0 intensity spotlight from 12 units above with 60° cone angle, 0.2 penumbra for sharper edges, 0.8 decay for brighter scene, and 35 unit distance
 - **Subtle Ambient Light**: 0x404040 at 0.2 intensity for gentle fill without washing out shadows
+- **Atmospheric Bloom**: Subtle post-processing bloom (strength 0.8-1.2, radius 0.4, threshold 0.5) enhances bright areas for ethereal glow
 - **Atmospheric Fog**: Linear fog starting at 10 units, complete darkness by 20 units
 - **Shadow Mapping**: 2048x2048 PCF soft shadows on desktop (disabled on mobile)
 
@@ -949,7 +1045,9 @@ The current implementation includes a **fully functional personal familiar care 
 
 **High Priority (Next Sprint):**
 
+- **Plasma Shader Integration**: Replace standard Phong material with custom plasma shader for dynamic surface effects (shaders are ready)
 - **Mutation Visual Rendering**: Connect mutation engine to creature renderer to display mutations visually on familiar (geometry generators are ready)
+- **Cell-Based Creature Geometry**: Integrate CellGeometryGenerator to replace standard sphere with organic cell-based surface (generator is ready)
 - **Care Meter Decay Scheduler**: Implement hourly decay scheduler (5 points per hour) using Devvit scheduler
 - **Evolution Cycle Scheduler**: Automatic aging and uncontrolled mutation triggers (30min - 4hr random intervals)
 - **State Polling Enhancement**: Implement 5-second polling to detect server-side changes (biome switches, uncontrolled mutations)
@@ -1045,6 +1143,11 @@ src/
 │   ├── creature/    # Creature rendering
 │   │   ├── creature-renderer.ts    # Base creature with mutations
 │   │   └── mutation-geometry.ts    # Mutation geometry generators
+│   ├── rendering/   # Advanced rendering systems
+│   │   ├── cell-geometry-generator.ts      # Voronoi cell-based geometry
+│   │   ├── skeletal-frame-generator.ts     # Glowing skeletal frame structure
+│   │   ├── plasma-shader-material.ts       # Custom GLSL plasma shaders
+│   │   └── post-processing-manager.ts      # Bloom and post-effects
 │   ├── biome/       # Biome environments
 │   │   └── biome-renderer.ts       # Environmental rendering
 │   ├── ui/          # HUD and UI components
@@ -1084,6 +1187,15 @@ Re-GenX showcases several technical innovations in web-based 3D gaming:
 - Multi-octave Simplex noise (3 octaves at 1x, 2x, 4x frequency) for truly organic motion
 - Per-vertex animation with 96 segments on desktop for ultra-smooth surfaces
 - Delta time-based animation ensures consistent speed across all devices
+
+**Biological Cell-Based Geometry:**
+- Voronoi tessellation using Fibonacci sphere algorithm for even cell distribution
+- 30-50 cells on mobile, 80-100 cells on desktop for optimal performance
+- Each cell has 5-8 irregular sides for natural, organic appearance
+- Depth variation (0.1-0.3) creates realistic surface relief and texture
+- Proper UV mapping and smooth vertex normals for realistic lighting
+- Skeletal frame system with glowing cyan lines along cell boundaries
+- Ready to replace standard sphere geometry for more biological look
 
 **Robust Network Architecture:**
 - Centralized APIClient with exponential backoff retry (1s, 2s, 4s delays)

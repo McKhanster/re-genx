@@ -76,9 +76,10 @@ function generateLegsGeometry(
     const legGeometry = new THREE.CylinderGeometry(legRadius, legRadius * 0.7, legLength, segments);
 
     const legMaterial = new THREE.MeshPhongMaterial({
-      color: 0x00cc66,
-      emissive: 0x00cc66,
-      emissiveIntensity: 0.3,
+      color: 0x00ff88,
+      emissive: 0x00ff88,
+      emissiveIntensity: 0.5,
+      shininess: 60,
     });
 
     const leg = new THREE.Mesh(legGeometry, legMaterial);
@@ -99,9 +100,10 @@ function generateLegsGeometry(
   // Convert group to single geometry (for performance)
   const mergedGeometry = new THREE.BufferGeometry();
   const material = new THREE.MeshPhongMaterial({
-    color: 0x00cc66,
-    emissive: 0x00cc66,
-    emissiveIntensity: 0.3,
+    color: 0x00ff88,
+    emissive: 0x00ff88,
+    emissiveIntensity: 0.5,
+    shininess: 60,
   });
 
   return {

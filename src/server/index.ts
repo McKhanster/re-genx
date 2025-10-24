@@ -246,7 +246,7 @@ router.post<unknown, { success: boolean; message: string } | ErrorResponse>(
       const familiarId = `familiar:${validatedUsername}`;
       
       // Clear mutations only, keep other data
-      await redis.hset(familiarId, {
+      await redis.hSet(familiarId, {
         mutations: JSON.stringify([]),
         evolutionPoints: '0',
       });

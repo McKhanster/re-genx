@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PostProcessingManager } from '../rendering/post-processing-manager';
 
 /**
  * Detects if the current device is mobile based on user agent
@@ -22,6 +23,7 @@ export class SceneManager {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
+  private postProcessing: PostProcessingManager;
   private spotlight!: THREE.SpotLight;
   private fog!: THREE.Fog;
   private cameraAngle: number = 0;
@@ -46,6 +48,15 @@ export class SceneManager {
     this.initCamera();
     this.initLighting();
     this.initRenderer();
+    
+    // Initialize post-processing after renderer is ready
+    this.postProcessing = new PostProcessingManager(
+      this.renderer,
+      this.scene,
+      this.camera,
+      this.mobile
+    );
+    
     this.setupResizeHandler();
   }
 
@@ -78,12 +89,12 @@ export class SceneManager {
    */
   private initLighting(): void {
     // Single spotlight from directly above - the only light source
-    this.spotlight = new THREE.SpotLight(0xffffff, 15.0); // Reduced intensity for better shadow contrast
+    this.spotlight = new THREE.SpotLight(0xffffff, 20.0); // Increased intensity for more vibrant lighting
     this.spotlight.position.set(0, 12, 0);
     this.spotlight.angle = Math.PI / 3; // Narrower cone for more focused light
-    this.spotlight.penumbra = 0.3; // Softer edge for more natural shadows
-    this.spotlight.decay = 1.0; // More natural decay
-    this.spotlight.distance = 30;
+    this.spotlight.penumbra = 0.2; // Sharper edge for more dramatic lighting
+    this.spotlight.decay = 0.8; // Less decay for brighter scene
+    this.spotlight.distance = 35;
     this.spotlight.castShadow = !this.mobile; // Disable shadows on mobile
 
     if (!this.mobile) {
@@ -99,8 +110,8 @@ export class SceneManager {
       this.spotlight.shadow.normalBias = 0.02;
     }
 
-    // Add subtle ambient light - too much washes out shadows
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.2);
+    // Add ambient light for better visibility and vibrant colors
+    const ambientLight = new THREE.AmbientLight(0x6688aa, 0.4); // Cooler blue-tinted ambient
     this.scene.add(ambientLight);
 
     // Add spotlight and target to scene first
@@ -147,6 +158,7 @@ export class SceneManager {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.postProcessing.resize(window.innerWidth, window.innerHeight);
     });
   }
 
@@ -178,10 +190,10 @@ export class SceneManager {
   }
 
   /**
-   * Render the scene
+   * Render the scene with post-processing
    */
   public render(): void {
-    this.renderer.render(this.scene, this.camera);
+    this.postProcessing.render();
   }
 
   /**
@@ -235,9 +247,17 @@ export class SceneManager {
   }
 
   /**
+   * Get the post-processing manager
+   */
+  public getPostProcessing(): PostProcessingManager {
+    return this.postProcessing;
+  }
+
+  /**
    * Dispose of resources
    */
   public dispose(): void {
+    this.postProcessing.dispose();
     this.renderer.dispose();
   }
 }

@@ -7,3 +7,14 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// GLSL shader module declarations
+declare module '*.glsl' {
+  const value: string;
+  export default value;
+}
+
+declare module '*.glsl?raw' {
+  const value: string;
+  export default value;
+}

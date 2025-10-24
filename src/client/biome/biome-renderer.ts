@@ -105,9 +105,11 @@ export class BiomeRenderer {
    * Create jungle biome with lush vegetation
    */
   private createJungleBiome(): void {
-    // Update ground texture to dark green
-    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0x2d5016);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 5;
+    // Update ground texture to vibrant green
+    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0x3a7d23);
+    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 15;
+    (this.groundMesh.material as THREE.MeshPhongMaterial).emissive.setHex(0x1a3d11);
+    (this.groundMesh.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.2;
 
     const objectCount = this.isMobile ? 6 : 12;
 
@@ -143,9 +145,11 @@ export class BiomeRenderer {
    * Create rocky mountain biome with rocks and boulders
    */
   private createRockyMountainBiome(): void {
-    // Update ground texture to gray rocky surface
-    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0x5a5a5a);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 5;
+    // Update ground texture to cool gray rocky surface
+    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0x7788aa);
+    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 20;
+    (this.groundMesh.material as THREE.MeshPhongMaterial).emissive.setHex(0x334455);
+    (this.groundMesh.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.15;
 
     const objectCount = this.isMobile ? 5 : 10;
 
@@ -185,9 +189,11 @@ export class BiomeRenderer {
    * Create desert biome with sand and cacti
    */
   private createDesertBiome(): void {
-    // Update ground texture to sandy yellow
-    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0xc2b280);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 8;
+    // Update ground texture to warm golden sand
+    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0xf4d03f);
+    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 25;
+    (this.groundMesh.material as THREE.MeshPhongMaterial).emissive.setHex(0xaa8833);
+    (this.groundMesh.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.2;
 
     const objectCount = this.isMobile ? 4 : 8;
 
@@ -222,10 +228,12 @@ export class BiomeRenderer {
    * Create ocean biome with water effects
    */
   private createOceanBiome(): void {
-    // Update ground texture to deep blue water
-    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0x1a4d7a);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 60;
-    (this.groundMesh.material as THREE.MeshPhongMaterial).specular.setHex(0x4488aa);
+    // Update ground texture to vibrant turquoise water
+    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0x2a8fbd);
+    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 100;
+    (this.groundMesh.material as THREE.MeshPhongMaterial).specular.setHex(0x88ddff);
+    (this.groundMesh.material as THREE.MeshPhongMaterial).emissive.setHex(0x1a5577);
+    (this.groundMesh.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.3;
 
     // Add water surface with animated waves
     const waterSurface = this.createWaterSurface();
@@ -266,9 +274,11 @@ export class BiomeRenderer {
    * Create cave biome with stalactites and dark atmosphere
    */
   private createCaveBiome(): void {
-    // Update ground texture to dark rocky cave floor
-    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0x2a2a2a);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 3;
+    // Update ground texture to mysterious purple-tinted cave floor
+    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0x443355);
+    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 10;
+    (this.groundMesh.material as THREE.MeshPhongMaterial).emissive.setHex(0x221133);
+    (this.groundMesh.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.25;
 
     const objectCount = this.isMobile ? 4 : 8;
 
