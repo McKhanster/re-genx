@@ -3,6 +3,8 @@ import { calculateRadiusOffset, generatePulsation } from '../utils/noise';
 import { MutationData } from '../../shared/types/api';
 import { generateMutationGeometry } from './mutation-geometry';
 import { StatFeedback } from '../ui/stat-feedback';
+import { CellGeometryGenerator } from '../rendering/cell-geometry-generator';
+import { PlasmaShaderMaterial } from '../rendering/plasma-shader-material';
 
 /**
  * CreatureRenderer handles rendering the base creature blob and all applied mutations
@@ -10,8 +12,8 @@ import { StatFeedback } from '../ui/stat-feedback';
  */
 export class CreatureRenderer {
   private baseMesh: THREE.Mesh;
-  private baseGeometry: THREE.SphereGeometry;
-  private baseMaterial: THREE.MeshPhongMaterial;
+  private baseGeometry: THREE.BufferGeometry;
+  private baseMaterial: PlasmaShaderMaterial;
   private mutationMeshes: Map<string, THREE.Mesh>;
   private scene: THREE.Scene;
   private isMobile: boolean;
@@ -37,7 +39,12 @@ export class CreatureRenderer {
 
     // Store original vertex positions for animation
     const positionAttribute = this.baseGeometry.getAttribute('position');
-    this.originalPositions = new Float32Array(positionAttribute.array);
+    if (positionAttribute && positionAttribute.array) {
+      this.originalPositions = new Float32Array(positionAttribute.array);
+    } else {
+      // Fallback if no position attribute
+      this.originalPositions = new Float32Array(0);
+    }
 
     // Add creature to scene at center
     this.baseMesh.position.set(0, 1.2, 0); // 4 feet above ground
@@ -45,49 +52,39 @@ export class CreatureRenderer {
   }
 
   /**
-   * Create the base pulsating blob mesh with irregular organic geometry
-   * Uses LOD-based segment count for optimal performance
+   * Create the base pulsating blob mesh with Voronoi cell geometry and plasma shader
+   * Uses LOD-based cell count for optimal performance
    */
   private createBaseMesh(): {
-    geometry: THREE.SphereGeometry;
-    material: THREE.MeshPhongMaterial;
+    geometry: THREE.BufferGeometry;
+    material: PlasmaShaderMaterial;
     mesh: THREE.Mesh;
   } {
-    // LOD-based geometry complexity
-    const segments = this.getSegmentCount();
+    // Generate Voronoi cell geometry based on device capabilities
+    const cellCount = this.getCellCount();
+    const depthVariation = this.isMobile ? 0.15 : 0.25;
+    
+    const geometry = CellGeometryGenerator.generateCellGeometry(
+      1.5, // Base radius
+      cellCount,
+      depthVariation
+    );
 
-    // Create sphere geometry with LOD-appropriate detail
-    const geometry = new THREE.SphereGeometry(1.5, segments, segments);
-
-    // Deform the sphere to create irregular blob shape with gentler noise
-    const positionAttribute = geometry.getAttribute('position');
-    for (let i = 0; i < positionAttribute.count; i++) {
-      const x = positionAttribute.getX(i);
-      const y = positionAttribute.getY(i);
-      const z = positionAttribute.getZ(i);
-
-      // Add initial noise with reduced amplitude for smoother surface
-      const offset = calculateRadiusOffset(x, y, z, 0, 0.5, 0.08);
-
-      const length = Math.sqrt(x * x + y * y + z * z);
-      const scale = 1 + offset;
-
-      positionAttribute.setXYZ(i, (x / length) * scale, (y / length) * scale, (z / length) * scale);
-    }
-
-    positionAttribute.needsUpdate = true;
-    geometry.computeVertexNormals();
-
-    // Create fully opaque material - impenetrable skin
-    const material = new THREE.MeshPhongMaterial({
-      color: 0xe5e4e2, // Platinum color
-      emissive: 0xaaaaaa, // Subtle warm glow
-      emissiveIntensity: 0.3,
-      shininess: 80, // Semi-gloss finish
-      specular: 0xffffff, // Bright specular highlights for metallic look
-      flatShading: false, // Smooth shading for glossy look
-      transparent: false, // Fully opaque
-      opacity: 1.0, // Solid - impenetrable
+    // Create plasma shader material with device-appropriate settings
+    const material = new PlasmaShaderMaterial({
+      baseColor: new THREE.Color(0x4444ff), // Deep blue base
+      glowColor: new THREE.Color(0x00ffff), // Cyan glow
+      glowIntensity: this.isMobile ? 0.4 : 0.6,
+      plasmaSpeed: 0.3,
+      cellEdgeWidth: 0.05,
+      cellEdgeGlow: this.isMobile ? 0.3 : 0.4,
+      opacity: 0.85,
+      colorPalette: [
+        new THREE.Color(0x00ffff), // Cyan
+        new THREE.Color(0xff00ff), // Magenta
+        new THREE.Color(0x9d00ff), // Purple
+        new THREE.Color(0x00ffaa), // Teal
+      ],
     });
 
     const mesh = new THREE.Mesh(geometry, material);
@@ -102,64 +99,86 @@ export class CreatureRenderer {
   }
 
   /**
-   * Animate the creature with fluid organic motion
+   * Animate the creature with fluid organic motion and update plasma shader
    * Should be called every frame
    * @param deltaTime - Time since last frame in seconds
+   * @param plasmaSpeed - Current plasma animation speed from performance monitor
    */
-  public pulsate(deltaTime: number): void {
+  public pulsate(deltaTime: number, plasmaSpeed: number = 1.0): void {
     this.time += deltaTime;
+
+    // Update plasma shader time with performance-adjusted speed
+    this.baseMaterial.updateTime(deltaTime);
+    this.baseMaterial.setPlasmaSpeed(0.3 * plasmaSpeed);
 
     // Get position attribute
     const positionAttribute = this.baseGeometry.getAttribute('position');
 
-    // Animate each vertex with fluid motion
-    for (let i = 0; i < positionAttribute.count; i++) {
-      // Get original position (guaranteed to exist since we created it)
-      const origX = this.originalPositions[i * 3] ?? 0;
-      const origY = this.originalPositions[i * 3 + 1] ?? 0;
-      const origZ = this.originalPositions[i * 3 + 2] ?? 0;
+    // Animate each vertex with fluid motion (if we have original positions)
+    if (this.originalPositions && positionAttribute.count * 3 <= this.originalPositions.length) {
+      for (let i = 0; i < positionAttribute.count; i++) {
+        // Get original position
+        const origX = this.originalPositions[i * 3] ?? 0;
+        const origY = this.originalPositions[i * 3 + 1] ?? 0;
+        const origZ = this.originalPositions[i * 3 + 2] ?? 0;
 
-      // Calculate radius offset using noise for smooth continuous motion with reduced amplitude
-      const offset = calculateRadiusOffset(origX, origY, origZ, this.time, 0.6, 0.06);
+        // Calculate radius offset using noise for smooth continuous motion
+        const offset = calculateRadiusOffset(origX, origY, origZ, this.time, 0.6, 0.06);
 
-      const length = Math.sqrt(origX * origX + origY * origY + origZ * origZ);
-      const scale = 1 + offset;
+        const length = Math.sqrt(origX * origX + origY * origY + origZ * origZ);
+        const scale = 1 + offset;
 
-      // Update vertex position
-      positionAttribute.setXYZ(
-        i,
-        (origX / length) * scale,
-        (origY / length) * scale,
-        (origZ / length) * scale
-      );
+        // Update vertex position
+        positionAttribute.setXYZ(
+          i,
+          (origX / length) * scale,
+          (origY / length) * scale,
+          (origZ / length) * scale
+        );
+      }
+
+      positionAttribute.needsUpdate = true;
+      this.baseGeometry.computeVertexNormals();
     }
-
-    positionAttribute.needsUpdate = true;
-    this.baseGeometry.computeVertexNormals();
 
     // Apply overall pulsation to the mesh scale
     const pulsation = generatePulsation(this.time, 1.0, 0.08);
     this.baseMesh.scale.set(pulsation, pulsation, pulsation);
 
-    // Pulse the glow intensity
-    const glowPulse = 0.5 + Math.sin(this.time * 1.5) * 0.2;
-    this.baseMaterial.emissiveIntensity = glowPulse;
+    // Pulse the glow intensity based on time (reduced intensity)
+    const glowPulse = 0.4 + Math.sin(this.time * 1.5) * 0.2;
+    this.baseMaterial.setGlowIntensity(glowPulse);
   }
 
   /**
-   * Get segment count based on LOD level
-   * High: 96 segments, Medium: 64 segments, Low: 48 segments
+   * Get cell count based on LOD level and device capabilities
+   * High: 80-100 cells, Medium: 60-80 cells, Low: 30-50 cells
    */
-  private getSegmentCount(): number {
-    switch (this.lodLevel) {
-      case 'high':
-        return 96;
-      case 'medium':
-        return 64;
-      case 'low':
-        return 48;
-      default:
-        return 64;
+  private getCellCount(): number {
+    if (this.isMobile) {
+      // Mobile: Reduced cell count for performance
+      switch (this.lodLevel) {
+        case 'high':
+          return 50;
+        case 'medium':
+          return 40;
+        case 'low':
+          return 30;
+        default:
+          return 40;
+      }
+    } else {
+      // Desktop: Higher cell count for quality
+      switch (this.lodLevel) {
+        case 'high':
+          return 100;
+        case 'medium':
+          return 80;
+        case 'low':
+          return 60;
+        default:
+          return 80;
+      }
     }
   }
 
@@ -270,14 +289,14 @@ export class CreatureRenderer {
         mesh.scale.lerpVectors(new THREE.Vector3(0, 0, 0), targetScale, eased);
 
         // Pulse creature glow during animation
-        const glowBoost = Math.sin(progress * Math.PI) * 0.3;
-        this.baseMaterial.emissiveIntensity = 0.5 + glowBoost;
+        const glowBoost = Math.sin(progress * Math.PI) * 0.1;
+        this.baseMaterial.setGlowIntensity(1.0 + glowBoost);
 
         if (progress < 1) {
           requestAnimationFrame(animate);
         } else {
           // Reset glow to normal
-          this.baseMaterial.emissiveIntensity = 0.5;
+          this.baseMaterial.setGlowIntensity(1.0);
           resolve();
         }
       };
@@ -381,22 +400,25 @@ export class CreatureRenderer {
   public updateCareMeterVisuals(careMeter: number): void {
     if (careMeter < 20) {
       // Sad/distressed appearance - dull colors, minimal pulsing
-      this.baseMaterial.color.setHex(0x999999); // Dull gray
-      this.baseMaterial.emissive.setHex(0x666666); // Very dim glow
-      this.baseMaterial.emissiveIntensity = 0.1;
+      this.baseMaterial.setBaseColor(new THREE.Color(0x666699)); // Dull blue
+      this.baseMaterial.setGlowColor(new THREE.Color(0x444466)); // Very dim glow
+      this.baseMaterial.setGlowIntensity(0.3);
+      this.baseMaterial.setOpacity(0.7);
       // Creature appears to droop slightly
       this.baseMesh.position.y = 1.0;
     } else if (careMeter < 50) {
       // Neutral appearance - normal colors, slower pulsing
-      this.baseMaterial.color.setHex(0xcccccc); // Light gray
-      this.baseMaterial.emissive.setHex(0x888888); // Dim glow
-      this.baseMaterial.emissiveIntensity = 0.2;
+      this.baseMaterial.setBaseColor(new THREE.Color(0x4444aa)); // Medium blue
+      this.baseMaterial.setGlowColor(new THREE.Color(0x6666cc)); // Dim glow
+      this.baseMaterial.setGlowIntensity(0.6);
+      this.baseMaterial.setOpacity(0.8);
       this.baseMesh.position.y = 1.1;
     } else {
       // Happy appearance - bright colors, active pulsing
-      this.baseMaterial.color.setHex(0xe5e4e2); // Platinum
-      this.baseMaterial.emissive.setHex(0xaaaaaa); // Warm glow
-      this.baseMaterial.emissiveIntensity = 0.3;
+      this.baseMaterial.setBaseColor(new THREE.Color(0x4444ff)); // Bright blue
+      this.baseMaterial.setGlowColor(new THREE.Color(0x00ffff)); // Cyan glow
+      this.baseMaterial.setGlowIntensity(0.6);
+      this.baseMaterial.setOpacity(0.85);
       this.baseMesh.position.y = 1.2;
     }
   }
@@ -419,7 +441,7 @@ export class CreatureRenderer {
           const eatScale = 1 + Math.sin(progress * Math.PI * 4) * 0.15;
           this.baseMesh.scale.set(eatScale, eatScale * 0.9, eatScale);
           // Glow brighter
-          this.baseMaterial.emissiveIntensity = 0.5 + Math.sin(progress * Math.PI) * 0.4;
+          this.baseMaterial.setGlowIntensity(1.0 + Math.sin(progress * Math.PI) * 0.8);
           break;
 
         case 'play':
@@ -427,8 +449,11 @@ export class CreatureRenderer {
           const bounceHeight = Math.sin(progress * Math.PI * 3) * 0.5;
           this.baseMesh.position.y = 1.2 + bounceHeight;
           this.baseMesh.rotation.y = progress * Math.PI * 2;
-          // Pulse glow
-          this.baseMaterial.emissiveIntensity = 0.5 + Math.sin(progress * Math.PI * 6) * 0.3;
+          // Pulse glow with color changes
+          this.baseMaterial.setGlowIntensity(1.0 + Math.sin(progress * Math.PI * 6) * 0.6);
+          // Cycle through colors during play
+          const playColor = new THREE.Color().setHSL((progress * 2) % 1, 1.0, 0.5);
+          this.baseMaterial.setGlowColor(playColor);
           break;
 
         case 'attention':
@@ -436,7 +461,7 @@ export class CreatureRenderer {
           const happyScale = 1 + Math.sin(progress * Math.PI * 2) * 0.1;
           this.baseMesh.scale.set(happyScale, happyScale, happyScale);
           // Warm glow
-          this.baseMaterial.emissiveIntensity = 0.5 + Math.sin(progress * Math.PI) * 0.5;
+          this.baseMaterial.setGlowIntensity(1.0 + Math.sin(progress * Math.PI) * 1.0);
           break;
       }
 
@@ -447,7 +472,8 @@ export class CreatureRenderer {
         this.baseMesh.scale.set(1, 1, 1);
         this.baseMesh.position.y = 1.2;
         this.baseMesh.rotation.y = 0;
-        this.baseMaterial.emissiveIntensity = 0.5;
+        this.baseMaterial.setGlowIntensity(1.0);
+        this.baseMaterial.setGlowColor(new THREE.Color(0x00ffff)); // Reset to cyan
       }
     };
 

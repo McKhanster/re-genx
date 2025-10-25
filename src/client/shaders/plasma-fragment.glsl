@@ -94,19 +94,19 @@ void main() {
   // Base color with plasma - ensure minimum brightness
   vec3 finalColor = mix(uBaseColor, plasmaColor, 0.8);
   
-  // Add cell edge glow
-  float edgeGlow = (1.0 - cellBoundary) * uCellEdgeGlow;
+  // Add cell edge glow (reduced)
+  float edgeGlow = (1.0 - cellBoundary) * uCellEdgeGlow * 0.5;
   finalColor += uGlowColor * edgeGlow;
   
-  // Add Fresnel edge glow
-  finalColor += uGlowColor * fresnel * uGlowIntensity;
+  // Add Fresnel edge glow (reduced)
+  finalColor += uGlowColor * fresnel * uGlowIntensity * 0.3;
   
-  // Inner glow effect (subsurface scattering approximation)
-  float innerGlow = pow(1.0 - cellDist * 0.5, 2.0) * 0.3;
+  // Inner glow effect (reduced)
+  float innerGlow = pow(1.0 - cellDist * 0.5, 2.0) * 0.1;
   finalColor += plasmaColor * innerGlow;
   
-  // Ensure minimum brightness (never completely black)
-  finalColor = max(finalColor, vec3(0.2));
+  // Ensure minimum brightness (reduced)
+  finalColor = max(finalColor, vec3(0.05));
   
   // Output with opacity
   gl_FragColor = vec4(finalColor, uOpacity);

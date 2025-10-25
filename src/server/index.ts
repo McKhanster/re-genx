@@ -13,6 +13,7 @@ import {
   MutationChooseResponse,
   PrivacyOptInRequest,
   PrivacyOptInResponse,
+  BiomeType,
 } from '../shared/types/api';
 import { redis, reddit, createServer, context, getServerPort } from '@devvit/web/server';
 import { createPost } from './core/post';
@@ -32,6 +33,7 @@ import {
   validateUsername,
   ValidationError,
 } from './utils/input-validator';
+
 
 const app = express();
 
@@ -628,6 +630,72 @@ router.post('/internal/scheduler/care-decay', async (req, res): Promise<void> =>
     res.status(500).json({
       status: 'error',
       message: error instanceof Error ? error.message : 'Failed to handle care decay',
+    });
+  }
+});
+
+// ============================================================================
+// Debug/Test Endpoints
+// ============================================================================
+
+/**
+ * Test Gemini API integration
+ * Remove this endpoint before production deployment
+ */
+router.get('/api/test/gemini', async (_req, res): Promise<void> => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
+      return;
+    }
+
+    const processor = new (await import('./llm/gemini-processor')).GeminiProcessor(apiKey);
+    
+    // Create proper MutationData objects for test endpoint
+    const mockMutations = [
+      {
+        id: 'mut_test_legacy_1',
+        type: 'controlled' as const,
+        traits: [{ category: 'legs', value: 4, randomnessFactor: 0.9 }],
+        statEffects: { mobility: { speed: 10 } },
+        timestamp: 1234567890
+      },
+      {
+        id: 'mut_test_legacy_2', 
+        type: 'controlled' as const,
+        traits: [{ category: 'color', value: '#ff0000', randomnessFactor: 0.9 }],
+        statEffects: { vitals: { happiness: 5 } },
+        timestamp: 1234567891
+      }
+    ];
+
+    const mockContext = {
+      stats: {
+        mobility: { speed: 65, agility: 70, endurance: 50 },
+        senses: { vision: 55, hearing: 50, smell: 45 },
+        survival: { attack: 60, defense: 55, stealth: 50 },
+        cognition: { intelligence: 50, social: 50, adaptability: 50 },
+        vitals: { health: 100, happiness: 85, energy: 90 }
+      },
+      mutations: mockMutations,
+      biome: "jungle" as const,
+      activityCategory: "gaming",
+      creatureId: "familiar:test123"
+    };
+
+    const options = await processor.generateMutationOptions(mockContext);
+    
+    res.json({
+      success: true,
+      options,
+      timestamp: Date.now()
+    });
+    
+  } catch (error) {
+    console.error('Gemini test failed:', error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Gemini test failed'
     });
   }
 });

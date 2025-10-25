@@ -40,7 +40,7 @@
   - Test care action animations with new material
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4, 3.5, 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 5. Create atmospheric gradient background
+- [x] 5. Create atmospheric gradient background
 
   - Study image in assets/orb.jpg
   - Create shader files: `src/client/shaders/gradient-vertex.glsl` and `src/client/shaders/gradient-fragment.glsl`
@@ -50,7 +50,7 @@
   - Configure depth write disabled to render behind all objects
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 6. Implement foreground silhouette elements
+- [x] 6. Implement foreground silhouette elements
 
   - Study image in assets/orb.jpg
   - Create `ForegroundRenderer` class in `src/client/effects/foreground-renderer.ts`
@@ -61,7 +61,7 @@
   - Add enable/disable toggle for performance optimization
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 7. Create performance monitoring system
+- [x] 7. Create performance monitoring system
 
   - Study image in assets/orb.jpg
   - Create `PerformanceMonitor` class in `src/client/utils/performance-monitor.ts`
@@ -72,7 +72,7 @@
   - Add automatic effect re-enabling when FPS > 35 for 5 seconds
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 8. Integrate all renderers into SceneManager
+- [x] 8. Integrate all renderers into SceneManager
 
   - Study image in assets/orb.jpg
   - Add `PostProcessingManager` initialization in SceneManager constructor
@@ -83,7 +83,7 @@
   - Replace `render()` method to use `postProcessing.render()`
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 4.1, 4.2, 4.3, 4.4, 4.5, 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 9. Integrate performance-based quality adjustments
+- [x] 9. Integrate performance-based quality adjustments
 
   - Study image in assets/orb.jpg
   - Connect PerformanceMonitor to PostProcessingManager for bloom intensity adjustment

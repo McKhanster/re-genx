@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { PostProcessingManager } from '../rendering/post-processing-manager';
+import { BackgroundGradientRenderer } from '../effects/background-gradient-renderer';
+import { ForegroundRenderer } from '../effects/foreground-renderer';
+import { PerformanceMonitor } from '../utils/performance-monitor';
+import { ProceduralElements } from './pc-scene';
 
 /**
  * Detects if the current device is mobile based on user agent
@@ -24,13 +28,21 @@ export class SceneManager {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private postProcessing: PostProcessingManager;
+  private backgroundGradient: BackgroundGradientRenderer;
+  private foreground: ForegroundRenderer;
+  private performanceMonitor: PerformanceMonitor;
+  private proceduralElements: ProceduralElements;
+  private proceduralTerrain: THREE.Mesh | null = null;
+  private proceduralRocks: THREE.InstancedMesh | null = null;
+  private proceduralVegetation: THREE.Group | null = null;
   private spotlight!: THREE.SpotLight;
   private fog!: THREE.Fog;
-  private cameraAngle: number = 0;
-  private cameraRadius: number = 8;
-  private cameraHeight: number = 1.2; // 4 feet above ground (parallel view)
+  private cameraAngle: number = 0; // Horizontal rotation (azimuth)
+  private cameraElevation: number = Math.PI / 6; // Vertical angle (elevation) - start at 30 degrees
+  private cameraRadius: number = 16;
   private mobile: boolean;
   private targetFPS: number;
+  private lastPlasmaSpeed: number = 1.0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.mobile = isMobile();
@@ -57,22 +69,44 @@ export class SceneManager {
       this.mobile
     );
     
+    // Initialize background gradient renderer (disabled for daylight)
+    // this.backgroundGradient = new BackgroundGradientRenderer(this.scene);
+    // Create a dummy background gradient for compatibility
+    this.backgroundGradient = {
+      dispose: () => {},
+    } as any;
+    
+    // Initialize foreground renderer (disabled for daylight)
+    // this.foreground = new ForegroundRenderer(this.scene, this.camera, this.mobile);
+    // Create a dummy foreground renderer for compatibility
+    this.foreground = {
+      updateParallax: () => {},
+      setEnabled: () => {},
+      dispose: () => {},
+    } as any;
+    
+    // Initialize performance monitor
+    this.performanceMonitor = new PerformanceMonitor(this.targetFPS);
+    
+    // Initialize procedural elements
+    this.proceduralElements = new ProceduralElements();
+    this.addProceduralTerrain('alien'); // Default to alien theme
+    
     this.setupResizeHandler();
   }
 
   /**
-   * Initialize the scene with background and fog for darkness beyond 10ft radius
+   * Initialize the scene with daylight background and natural fog
    */
   private initScene(): void {
-    this.scene.background = new THREE.Color(0x000000);
+    // Natural daylight sky color
+    this.scene.background = new THREE.Color(0x87ceeb); // Sky blue
 
-    // Add fog to create darkness beyond 10ft radius
-    // 10ft ≈ 3 meters in our scene units
-    // Fog starts at 10 meters and fully dark at 20 meters for better visibility
-    this.fog = new THREE.Fog(0x000000, 10, 20);
+    // Light fog for atmospheric depth
+    this.fog = new THREE.Fog(0xb0c4de, 50, 200); // Light steel blue fog, much further out
     this.scene.fog = this.fog;
 
-    console.log('Scene initialized with background and fog');
+    console.log('Scene initialized with daylight background and natural fog');
   }
 
   /**
@@ -85,50 +119,53 @@ export class SceneManager {
   }
 
   /**
-   * Set up spotlight from directly above with proper angle and intensity
+   * Set up natural daylight lighting
    */
   private initLighting(): void {
-    // Single spotlight from directly above - the only light source
-    this.spotlight = new THREE.SpotLight(0xffffff, 20.0); // Increased intensity for more vibrant lighting
-    this.spotlight.position.set(0, 12, 0);
-    this.spotlight.angle = Math.PI / 3; // Narrower cone for more focused light
-    this.spotlight.penumbra = 0.2; // Sharper edge for more dramatic lighting
-    this.spotlight.decay = 0.8; // Less decay for brighter scene
-    this.spotlight.distance = 35;
-    this.spotlight.castShadow = !this.mobile; // Disable shadows on mobile
+    // Directional light simulating the sun
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    sunLight.position.set(50, 100, 50); // Sun position (high and angled)
+    sunLight.castShadow = !this.mobile; // Enable shadows on desktop
 
     if (!this.mobile) {
-      // Higher resolution shadow map for better quality
-      this.spotlight.shadow.mapSize.width = 2048;
-      this.spotlight.shadow.mapSize.height = 2048;
-      // Shadow camera settings - must capture from light (y=12) to ground (y=-0.5)
-      this.spotlight.shadow.camera.near = 0.5;
-      this.spotlight.shadow.camera.far = 25;
-      // Adjust shadow bias - negative values can help with shadow acne
-      this.spotlight.shadow.bias = -0.001;
-      // Normalize bias helps with peter-panning
-      this.spotlight.shadow.normalBias = 0.02;
+      // Shadow settings for directional light
+      sunLight.shadow.mapSize.width = 2048;
+      sunLight.shadow.mapSize.height = 2048;
+      sunLight.shadow.camera.near = 0.5;
+      sunLight.shadow.camera.far = 200;
+      // Larger shadow camera for terrain coverage
+      sunLight.shadow.camera.left = -50;
+      sunLight.shadow.camera.right = 50;
+      sunLight.shadow.camera.top = 50;
+      sunLight.shadow.camera.bottom = -50;
+      sunLight.shadow.bias = -0.0005;
+      sunLight.shadow.normalBias = 0.02;
     }
 
-    // Add ambient light for better visibility and vibrant colors
-    const ambientLight = new THREE.AmbientLight(0x6688aa, 0.4); // Cooler blue-tinted ambient
+    this.scene.add(sunLight);
+
+    // Ambient light for natural fill lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Bright white ambient
     this.scene.add(ambientLight);
 
-    // Add spotlight and target to scene first
-    this.scene.add(this.spotlight);
-    this.scene.add(this.spotlight.target);
-    
-    // Then set target position - points at origin (0, 0, 0) - directly downward
-    this.spotlight.target.position.set(0, 0, 0);
-    this.spotlight.target.updateMatrixWorld();
+    // Hemisphere light for sky/ground color variation
+    const hemisphereLight = new THREE.HemisphereLight(
+      0x87ceeb, // Sky color (light blue)
+      0x8b7355, // Ground color (earth brown)
+      0.4
+    );
+    this.scene.add(hemisphereLight);
 
-    console.log('Lighting initialized - bright spotlight with ambient fill');
+    // Store sun light reference for compatibility (some code expects spotlight)
+    this.spotlight = sunLight as any; // Type assertion for compatibility
+
+    console.log('Natural daylight lighting initialized');
     if (!this.mobile) {
       console.log('Shadow settings:', {
-        castShadow: this.spotlight.castShadow,
-        mapSize: this.spotlight.shadow.mapSize,
-        bias: this.spotlight.shadow.bias,
-        normalBias: this.spotlight.shadow.normalBias,
+        castShadow: sunLight.castShadow,
+        mapSize: sunLight.shadow.mapSize,
+        bias: sunLight.shadow.bias,
+        normalBias: sunLight.shadow.normalBias,
       });
     }
   }
@@ -143,7 +180,7 @@ export class SceneManager {
 
     this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setClearColor(0x000000, 1);
+    this.renderer.setClearColor(0x87ceeb, 1); // Sky blue clear color
     this.renderer.shadowMap.enabled = !this.mobile;
     if (!this.mobile) {
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -163,19 +200,27 @@ export class SceneManager {
   }
 
   /**
-   * Update camera position based on current angle
+   * Update camera position based on current angle and elevation (spherical coordinates)
    */
   private updateCameraPosition(): void {
-    this.camera.position.x = Math.sin(this.cameraAngle) * this.cameraRadius;
-    this.camera.position.z = Math.cos(this.cameraAngle) * this.cameraRadius;
-    this.camera.position.y = this.cameraHeight;
-    // Look slightly below blob center to see ground plane
-    this.camera.lookAt(0, 0.5, 0);
+    // Convert spherical coordinates to cartesian
+    // x = r * sin(elevation) * sin(azimuth)
+    // y = r * cos(elevation)
+    // z = r * sin(elevation) * cos(azimuth)
+    
+    const horizontalRadius = Math.sin(this.cameraElevation) * this.cameraRadius;
+    
+    this.camera.position.x = Math.sin(this.cameraAngle) * horizontalRadius;
+    this.camera.position.y = Math.cos(this.cameraElevation) * this.cameraRadius;
+    this.camera.position.z = Math.cos(this.cameraAngle) * horizontalRadius;
+    
+    // Always look at the creature center
+    this.camera.lookAt(0, 1.2, 0);
   }
 
   /**
-   * Rotate camera around the creature (360 degrees)
-   * @param angle - Angle in radians
+   * Rotate camera around the creature horizontally (360 degrees)
+   * @param angle - Horizontal angle in radians (azimuth)
    */
   public rotateCamera(angle: number): void {
     this.cameraAngle = angle;
@@ -183,10 +228,62 @@ export class SceneManager {
   }
 
   /**
-   * Get current camera angle
+   * Set camera elevation (vertical angle)
+   * @param elevation - Elevation angle in radians (0 = top, PI/2 = horizon, PI = bottom)
+   */
+  public setCameraElevation(elevation: number): void {
+    // Clamp elevation to upper hemisphere (0 to PI/2)
+    this.cameraElevation = Math.max(0.1, Math.min(Math.PI / 2, elevation));
+    this.updateCameraPosition();
+  }
+
+  /**
+   * Set camera position using spherical coordinates
+   * @param azimuth - Horizontal angle in radians
+   * @param elevation - Vertical angle in radians (0 = top, PI/2 = horizon)
+   */
+  public setCameraSpherical(azimuth: number, elevation: number): void {
+    this.cameraAngle = azimuth;
+    this.setCameraElevation(elevation);
+  }
+
+  /**
+   * Get current camera horizontal angle
    */
   public getCameraAngle(): number {
     return this.cameraAngle;
+  }
+
+  /**
+   * Get current camera elevation
+   */
+  public getCameraElevation(): number {
+    return this.cameraElevation;
+  }
+
+  /**
+   * Update all renderers with delta time and apply performance-based quality adjustments
+   * @param deltaTime - Time elapsed since last frame in seconds
+   */
+  public update(deltaTime: number): void {
+    // Update foreground parallax based on camera rotation
+    this.foreground.updateParallax(this.cameraAngle);
+    
+    // Update performance monitor
+    this.performanceMonitor.update(deltaTime);
+    
+    // Apply performance-based adjustments each frame
+    const settings = this.performanceMonitor.getEffectSettings();
+    
+    // Connect PerformanceMonitor to PostProcessingManager for bloom intensity adjustment
+    this.postProcessing.setBloomIntensity(settings.bloomIntensity);
+    
+    // Connect PerformanceMonitor to ForegroundRenderer for enable/disable
+    this.foreground.setEnabled(settings.foregroundEnabled);
+    
+    // Store plasma speed setting for CreatureRenderer to use
+    // (CreatureRenderer will need to call getPlasmaSpeed() to get this value)
+    this.lastPlasmaSpeed = settings.plasmaSpeed;
   }
 
   /**
@@ -240,10 +337,36 @@ export class SceneManager {
   }
 
   /**
-   * Get the spotlight for debugging
+   * Get the sun light (stored as spotlight for compatibility)
    */
-  public getSpotlight(): THREE.SpotLight {
-    return this.spotlight;
+  public getSpotlight(): THREE.DirectionalLight {
+    return this.spotlight as any;
+  }
+
+  /**
+   * Set the sun light intensity
+   */
+  public setSunLightIntensity(intensity: number): void {
+    const sunLight = this.spotlight as any as THREE.DirectionalLight;
+    if (sunLight) {
+      sunLight.intensity = intensity;
+    }
+  }
+
+  /**
+   * Set creature brightness by adjusting emissive intensity
+   */
+  public setCreatureBrightness(brightness: number): void {
+    // This will need to be called on the creature renderer
+    // For now, we'll store it and apply it when the creature is available
+    (this as any).creatureBrightness = brightness;
+  }
+
+  /**
+   * Get stored creature brightness
+   */
+  public getCreatureBrightness(): number {
+    return (this as any).creatureBrightness || 1.0;
   }
 
   /**
@@ -254,10 +377,102 @@ export class SceneManager {
   }
 
   /**
+   * Get the background gradient renderer
+   */
+  public getBackgroundGradient(): BackgroundGradientRenderer {
+    return this.backgroundGradient;
+  }
+
+  /**
+   * Get the foreground renderer
+   */
+  public getForeground(): ForegroundRenderer {
+    return this.foreground;
+  }
+
+  /**
+   * Get the performance monitor
+   */
+  public getPerformanceMonitor(): PerformanceMonitor {
+    return this.performanceMonitor;
+  }
+
+  /**
+   * Get current plasma animation speed based on performance
+   */
+  public getPlasmaSpeed(): number {
+    return this.lastPlasmaSpeed;
+  }
+
+  /**
+   * Add procedural terrain elements to the scene
+   * @param theme - Theme for the procedural elements ('jungle', 'desert', 'alien')
+   */
+  public addProceduralTerrain(theme: 'jungle' | 'desert' | 'alien'): void {
+    // Remove existing procedural elements
+    this.removeProceduralTerrain();
+    
+    // Create new terrain
+    this.proceduralTerrain = this.proceduralElements.createTerrain(theme, 400, 400, 64, this.mobile);
+    this.scene.add(this.proceduralTerrain);
+    
+    // Create rocks
+    this.proceduralRocks = this.proceduralElements.createRocks(theme, this.proceduralTerrain, this.mobile);
+    this.scene.add(this.proceduralRocks);
+    
+    // Create vegetation
+    this.proceduralVegetation = this.proceduralElements.createVegetation(theme, this.proceduralTerrain, this.mobile);
+    this.scene.add(this.proceduralVegetation);
+    
+    console.log(`Procedural terrain added with theme: ${theme}`);
+  }
+
+  /**
+   * Remove procedural terrain elements from the scene
+   */
+  public removeProceduralTerrain(): void {
+    if (this.proceduralTerrain) {
+      this.scene.remove(this.proceduralTerrain);
+      this.proceduralTerrain.geometry.dispose();
+      if (this.proceduralTerrain.material instanceof THREE.Material) {
+        this.proceduralTerrain.material.dispose();
+      }
+      this.proceduralTerrain = null;
+    }
+    
+    if (this.proceduralRocks) {
+      this.scene.remove(this.proceduralRocks);
+      this.proceduralRocks.geometry.dispose();
+      if (this.proceduralRocks.material instanceof THREE.Material) {
+        this.proceduralRocks.material.dispose();
+      }
+      this.proceduralRocks = null;
+    }
+    
+    if (this.proceduralVegetation) {
+      this.scene.remove(this.proceduralVegetation);
+      this.proceduralVegetation.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose();
+          if (child.material instanceof THREE.Material) {
+            child.material.dispose();
+          }
+        }
+      });
+      this.proceduralVegetation = null;
+    }
+  }
+
+
+
+  /**
    * Dispose of resources
    */
   public dispose(): void {
     this.postProcessing.dispose();
+    this.backgroundGradient.dispose();
+    this.foreground.dispose();
+    this.removeProceduralTerrain();
     this.renderer.dispose();
   }
 }

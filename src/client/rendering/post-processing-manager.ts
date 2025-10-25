@@ -68,12 +68,12 @@ export class PostProcessingManager {
   private createBloomPass(): UnrealBloomPass {
     const resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
 
-    // Subtle bloom for atmospheric glow without overwhelming brightness
-    // Desktop: Moderate bloom strength
-    // Mobile: Reduced strength for performance and subtlety
-    const strength = this.isMobile ? 0.8 : 1.2;
-    const radius = 0.4;
-    const threshold = 0.5; // Higher threshold = only bright areas bloom
+    // Very subtle bloom for atmospheric glow without overwhelming brightness
+    // Desktop: Reduced bloom strength
+    // Mobile: Minimal strength for performance and subtlety
+    const strength = this.isMobile ? 0.3 : 0.5;
+    const radius = 0.3;
+    const threshold = 0.8; // Higher threshold = only very bright areas bloom
 
     const bloomPass = new UnrealBloomPass(resolution, strength, radius, threshold);
 

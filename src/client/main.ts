@@ -662,25 +662,37 @@ hudDrawer.updateStats(demoStats);
 
 console.log('HUDDrawer initialized with demo data');
 
-// Camera rotation controls
+// Camera spherical controls (half-sphere movement)
 let isDragging = false;
 let previousMouseX = 0;
+let previousMouseY = 0;
 
 function handlePointerDown(event: PointerEvent): void {
   isDragging = true;
   previousMouseX = event.clientX;
+  previousMouseY = event.clientY;
 }
 
 function handlePointerMove(event: PointerEvent): void {
   if (!isDragging) return;
 
   const deltaX = event.clientX - previousMouseX;
+  const deltaY = event.clientY - previousMouseY;
+  
   previousMouseX = event.clientX;
+  previousMouseY = event.clientY;
 
-  // Rotate camera based on drag distance
+  // Horizontal rotation (azimuth)
   const rotationSpeed = 0.005;
   const newAngle = sceneManager.getCameraAngle() + deltaX * rotationSpeed;
-  sceneManager.rotateCamera(newAngle);
+  
+  // Vertical elevation (up/down movement)
+  const elevationSpeed = 0.003;
+  const currentElevation = sceneManager.getCameraElevation();
+  const newElevation = currentElevation + deltaY * elevationSpeed;
+  
+  // Update camera with both horizontal and vertical movement
+  sceneManager.setCameraSpherical(newAngle, newElevation);
 }
 
 function handlePointerUp(): void {
@@ -692,7 +704,7 @@ window.addEventListener('pointermove', handlePointerMove);
 window.addEventListener('pointerup', handlePointerUp);
 window.addEventListener('pointercancel', handlePointerUp);
 
-// Animation loop with FPS throttling
+// Animation loop with FPS throttling and performance-based quality adjustments
 let lastTime = performance.now();
 const targetFrameTime = 1000 / sceneManager.getTargetFPS();
 
@@ -709,14 +721,186 @@ function animate(): void {
 
   lastTime = currentTime - (deltaTime % targetFrameTime);
 
-  // Animate creature with fluid organic motion
   const deltaTimeSeconds = deltaTime / 1000;
-  creatureRenderer.pulsate(deltaTimeSeconds);
+  
+  // Update SceneManager with performance monitoring and quality adjustments
+  sceneManager.update(deltaTimeSeconds);
+  
+  // Animate creature with fluid organic motion and performance-adjusted plasma speed
+  const plasmaSpeed = sceneManager.getPlasmaSpeed();
+  creatureRenderer.pulsate(deltaTimeSeconds, plasmaSpeed);
 
   sceneManager.render();
 }
 
 console.log('Starting animation loop');
+
+// Add debug controls for procedural terrain themes
+const themeButton = document.createElement('button');
+themeButton.textContent = 'Switch Terrain Theme';
+themeButton.style.cssText = `
+  position: fixed;
+  top: 140px;
+  right: 20px;
+  padding: 10px 20px;
+  background: #4444ff;
+  color: white;
+  border: 2px solid #0000ff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Orbitron', sans-serif;
+  z-index: 10000;
+`;
+
+let currentTheme: 'jungle' | 'desert' | 'alien' = 'alien';
+const themes: ('jungle' | 'desert' | 'alien')[] = ['jungle', 'desert', 'alien'];
+
+themeButton.onclick = () => {
+  const currentIndex = themes.indexOf(currentTheme);
+  const nextIndex = (currentIndex + 1) % themes.length;
+  currentTheme = themes[nextIndex] || 'alien';
+  sceneManager.addProceduralTerrain(currentTheme);
+  themeButton.textContent = `Theme: ${currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1)}`;
+};
+
+themeButton.textContent = `Theme: ${currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1)}`;
+document.body.appendChild(themeButton);
+
+// Add camera instructions
+// Add light intensity slider
+const lightControlDiv = document.createElement('div');
+lightControlDiv.style.cssText = `
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #00ffff;
+  border: 1px solid #00ffff;
+  padding: 15px;
+  border-radius: 6px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  z-index: 10000;
+`;
+
+const lightLabel = document.createElement('label');
+lightLabel.textContent = 'Light Intensity';
+lightLabel.style.cssText = `
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #00ffff;
+`;
+
+const lightSlider = document.createElement('input');
+lightSlider.type = 'range';
+lightSlider.min = '0.2';
+lightSlider.max = '3.0';
+lightSlider.step = '0.1';
+lightSlider.value = '1.5';
+lightSlider.style.cssText = `
+  width: 150px;
+  height: 4px;
+  background: #333;
+  outline: none;
+  border-radius: 2px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+`;
+
+// Style the slider thumb
+const style = document.createElement('style');
+style.textContent = `
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #00ffff;
+    cursor: pointer;
+    border: 2px solid #004444;
+  }
+  
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #00ffff;
+    cursor: pointer;
+    border: 2px solid #004444;
+  }
+`;
+document.head.appendChild(style);
+
+lightSlider.addEventListener('input', (e) => {
+  const intensity = parseFloat((e.target as HTMLInputElement).value);
+  console.log('Light Intensity:', intensity);
+  sceneManager.setSunLightIntensity(intensity);
+});
+
+lightControlDiv.appendChild(lightLabel);
+lightControlDiv.appendChild(lightSlider);
+
+// Add creature brightness slider
+const creatureLabel = document.createElement('label');
+creatureLabel.textContent = 'Creature Brightness';
+creatureLabel.style.cssText = `
+  display: block;
+  margin-top: 15px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #00ffff;
+`;
+
+const creatureSlider = document.createElement('input');
+creatureSlider.type = 'range';
+creatureSlider.min = '0.1';
+creatureSlider.max = '3.0';
+creatureSlider.step = '0.1';
+creatureSlider.value = '1.0';
+creatureSlider.style.cssText = `
+  width: 150px;
+  height: 4px;
+  background: #333;
+  outline: none;
+  border-radius: 2px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+`;
+
+creatureSlider.addEventListener('input', (e) => {
+  const brightness = parseFloat((e.target as HTMLInputElement).value);
+  console.log('Creature Brightness:', brightness);
+  sceneManager.setCreatureBrightness(brightness);
+  
+  // Apply brightness to creature if it exists
+  if (creatureRenderer) {
+    // Get the creature's base mesh and its PlasmaShaderMaterial
+    const baseMesh = creatureRenderer.getBaseMesh();
+    const material = baseMesh.material;
+    
+    // Check if it's a PlasmaShaderMaterial with setGlowIntensity method
+    if (material && typeof (material as any).setGlowIntensity === 'function') {
+      (material as any).setGlowIntensity(brightness);
+      console.log('Applied creature brightness:', brightness);
+    } else {
+      console.log('Creature material type:', material?.constructor.name);
+      console.log('Available methods:', Object.getOwnPropertyNames(material || {}));
+    }
+  } else {
+    console.log('CreatureRenderer not available yet');
+  }
+});
+
+lightControlDiv.appendChild(creatureLabel);
+lightControlDiv.appendChild(creatureSlider);
+document.body.appendChild(lightControlDiv);
+
+
+
 void fetchInitialCount();
 
 // Debug: Add button to reset familiar (remove after testing)

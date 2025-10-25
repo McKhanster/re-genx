@@ -194,18 +194,26 @@ export class CellGeometryGenerator {
   }
 
   /**
-   * Convert cell polygons to Three.js BufferGeometry with solid appearance
-   * Creates a complete sphere surface without holes
+   * Convert cell polygons to Three.js BufferGeometry with completely solid surface
+   * Creates a complete sphere surface without any holes or gaps
    * @param polygons - Array of cell polygons
    * @param depthVariation - Depth variation for surface relief
    * @param baseRadius - Base sphere radius
-   * @returns BufferGeometry with cell pattern covering entire surface
+   * @returns BufferGeometry with solid cell pattern covering entire surface
    */
   private static polygonsToGeometry(
     polygons: CellPolygon[],
     depthVariation: number,
     baseRadius: number
   ): THREE.BufferGeometry {
+    // Create a base sphere geometry first to ensure complete coverage
+    const baseSphere = new THREE.SphereGeometry(baseRadius, 32, 32);
+    const positionAttribute = baseSphere.attributes.position;
+    if (!positionAttribute) {
+      throw new Error('Base sphere geometry missing position attribute');
+    }
+    const basePositions = positionAttribute.array as Float32Array;
+    
     const positions: number[] = [];
     const normals: number[] = [];
     const uvs: number[] = [];
@@ -213,12 +221,48 @@ export class CellGeometryGenerator {
 
     let vertexIndex = 0;
 
-    // Convert each cell polygon to triangles
+    // Start with base sphere vertices to ensure no holes
+    for (let i = 0; i < basePositions.length; i += 3) {
+      const x = basePositions[i];
+      const y = basePositions[i + 1];
+      const z = basePositions[i + 2];
+      
+      if (x !== undefined && y !== undefined && z !== undefined) {
+        // Add slight depth variation to base sphere
+        const point = new THREE.Vector3(x, y, z);
+        const depth = (Math.random() - 0.5) * depthVariation * 0.5;
+        const adjustedPoint = point.normalize().multiplyScalar(baseRadius + depth);
+        
+        positions.push(adjustedPoint.x, adjustedPoint.y, adjustedPoint.z);
+        
+        const normal = adjustedPoint.clone().normalize();
+        normals.push(normal.x, normal.y, normal.z);
+        
+        const uv = this.sphericalUV(adjustedPoint);
+        uvs.push(uv.x, uv.y);
+      }
+    }
+
+    // Copy indices from base sphere
+    const baseIndices = baseSphere.index?.array;
+    if (baseIndices) {
+      for (let i = 0; i < baseIndices.length; i++) {
+        const index = baseIndices[i];
+        if (index !== undefined) {
+          indices.push(index);
+        }
+      }
+    }
+
+    // Now add cell detail on top of the base sphere
+    vertexIndex = positions.length / 3;
+
+    // Add cell polygons as additional surface detail
     for (const polygon of polygons) {
       const { center, vertices } = polygon;
 
-      // Add random depth variation to create surface relief
-      const depth = (Math.random() - 0.5) * depthVariation;
+      // Add moderate depth variation for cell relief
+      const depth = (Math.random() - 0.5) * depthVariation * 0.8;
       const adjustedCenter = center.clone().normalize().multiplyScalar(baseRadius + depth);
 
       // Add center vertex
@@ -232,10 +276,10 @@ export class CellGeometryGenerator {
       const centerUV = this.sphericalUV(adjustedCenter);
       uvs.push(centerUV.x, centerUV.y);
 
-      // Add vertices with slight depth variation
+      // Add vertices with consistent depth variation
       const vertexIndices: number[] = [];
       for (const vertex of vertices) {
-        const vertexDepth = depth + (Math.random() - 0.5) * depthVariation * 0.3;
+        const vertexDepth = depth + (Math.random() - 0.5) * depthVariation * 0.2;
         const adjustedVertex = vertex.clone().normalize().multiplyScalar(baseRadius + vertexDepth);
 
         vertexIndices.push(vertexIndex++);
@@ -248,8 +292,7 @@ export class CellGeometryGenerator {
         uvs.push(vertexUV.x, vertexUV.y);
       }
 
-      // Create triangles from center to each edge
-      // This creates a complete surface with no holes
+      // Create triangles from center to each edge for additional surface detail
       for (let i = 0; i < vertexIndices.length; i++) {
         const nextIndex = (i + 1) % vertexIndices.length;
         const currentVertex = vertexIndices[i];
@@ -260,7 +303,7 @@ export class CellGeometryGenerator {
       }
     }
 
-    // Create BufferGeometry
+    // Create BufferGeometry with solid base
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
@@ -269,6 +312,9 @@ export class CellGeometryGenerator {
 
     // Compute vertex normals for smooth shading
     geometry.computeVertexNormals();
+
+    // Dispose of temporary base sphere
+    baseSphere.dispose();
 
     return geometry;
   }

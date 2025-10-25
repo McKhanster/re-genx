@@ -2,6 +2,7 @@ import { RedisClient } from '@devvit/web/server';
 import { MutationData, MutationTrait, StatEffects, FamiliarStats } from '../../shared/types/api';
 import { ActivityTracker, ActivityPattern } from './activity-tracker';
 import { safeRedisOperation } from '../utils/redis-utils';
+import { GeminiProcessor } from '../llm/gemini-processor';
 
 /**
  * TraitOption represents a single trait choice for controlled mutations

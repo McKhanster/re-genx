@@ -16,13 +16,14 @@ export class BiomeRenderer {
   constructor(scene: THREE.Scene, isMobile: boolean = false) {
     this.scene = scene;
     this.isMobile = isMobile;
+    // Create a dummy ground mesh for compatibility but don't add it to scene
+    // The procedural terrain will serve as the ground
     this.groundMesh = this.createGroundMesh();
-    this.scene.add(this.groundMesh);
   }
 
   /**
-   * Create the circular ground mesh with 5ft (1.524m) radius
-   * Using 5ft = 1.524 meters in scene units
+   * Create a dummy ground mesh for compatibility
+   * The actual ground is now handled by procedural terrain
    */
   private createGroundMesh(): THREE.Mesh {
     const radius = 5; // 5ft radius
@@ -103,223 +104,47 @@ export class BiomeRenderer {
 
   /**
    * Create jungle biome with lush vegetation
+   * Vegetation is now handled by procedural terrain
    */
   private createJungleBiome(): void {
-    // Update ground texture to vibrant green
-    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0x3a7d23);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 15;
-    (this.groundMesh.material as THREE.MeshPhongMaterial).emissive.setHex(0x1a3d11);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.2;
-
-    const objectCount = this.isMobile ? 6 : 12;
-
-    // Add vegetation within 5ft radius
-    for (let i = 0; i < objectCount; i++) {
-      const angle = (i / objectCount) * Math.PI * 2;
-      const distance = 2.5 + Math.random() * 2; // 2.5-4.5ft from center
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
-
-      const plant = this.createPlant();
-      plant.position.set(x, -0.5, z);
-      plant.rotation.y = Math.random() * Math.PI * 2;
-      this.scene.add(plant);
-      this.environmentObjects.push(plant);
-    }
-
-    // Add some ground foliage
-    for (let i = 0; i < objectCount / 2; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * 4;
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
-
-      const foliage = this.createFoliage();
-      foliage.position.set(x, -0.45, z);
-      this.scene.add(foliage);
-      this.environmentObjects.push(foliage);
-    }
+    // All vegetation is now handled by procedural terrain
+    // BiomeRenderer no longer creates environment objects
   }
 
   /**
    * Create rocky mountain biome with rocks and boulders
+   * Rocks are now handled by procedural terrain
    */
   private createRockyMountainBiome(): void {
-    // Update ground texture to cool gray rocky surface
-    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0x7788aa);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 20;
-    (this.groundMesh.material as THREE.MeshPhongMaterial).emissive.setHex(0x334455);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.15;
-
-    const objectCount = this.isMobile ? 5 : 10;
-
-    // Add rocks and boulders
-    for (let i = 0; i < objectCount; i++) {
-      const angle = (i / objectCount) * Math.PI * 2 + Math.random() * 0.5;
-      const distance = 2 + Math.random() * 2.5;
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
-
-      const rock = this.createRock();
-      rock.position.set(x, -0.3, z);
-      rock.rotation.set(
-        Math.random() * 0.3,
-        Math.random() * Math.PI * 2,
-        Math.random() * 0.3
-      );
-      this.scene.add(rock);
-      this.environmentObjects.push(rock);
-    }
-
-    // Add smaller pebbles
-    for (let i = 0; i < objectCount; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * 4;
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
-
-      const pebble = this.createPebble();
-      pebble.position.set(x, -0.45, z);
-      this.scene.add(pebble);
-      this.environmentObjects.push(pebble);
-    }
+    // All rocks and environment objects are now handled by procedural terrain
+    // BiomeRenderer no longer creates environment objects
   }
 
   /**
    * Create desert biome with sand and cacti
+   * Cacti and dunes are now handled by procedural terrain
    */
   private createDesertBiome(): void {
-    // Update ground texture to warm golden sand
-    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0xf4d03f);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 25;
-    (this.groundMesh.material as THREE.MeshPhongMaterial).emissive.setHex(0xaa8833);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.2;
-
-    const objectCount = this.isMobile ? 4 : 8;
-
-    // Add cacti
-    for (let i = 0; i < objectCount; i++) {
-      const angle = (i / objectCount) * Math.PI * 2 + Math.random() * 0.8;
-      const distance = 2.5 + Math.random() * 2;
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
-
-      const cactus = this.createCactus();
-      cactus.position.set(x, -0.5, z);
-      this.scene.add(cactus);
-      this.environmentObjects.push(cactus);
-    }
-
-    // Add sand dunes (small mounds)
-    for (let i = 0; i < objectCount / 2; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * 3.5;
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
-
-      const dune = this.createSandDune();
-      dune.position.set(x, -0.5, z);
-      this.scene.add(dune);
-      this.environmentObjects.push(dune);
-    }
+    // All cacti and environment objects are now handled by procedural terrain
+    // BiomeRenderer no longer creates environment objects
   }
 
   /**
    * Create ocean biome with water effects
+   * Water and coral are now handled by procedural terrain
    */
   private createOceanBiome(): void {
-    // Update ground texture to vibrant turquoise water
-    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0x2a8fbd);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 100;
-    (this.groundMesh.material as THREE.MeshPhongMaterial).specular.setHex(0x88ddff);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).emissive.setHex(0x1a5577);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.3;
-
-    // Add water surface with animated waves
-    const waterSurface = this.createWaterSurface();
-    waterSurface.position.y = -0.45;
-    this.scene.add(waterSurface);
-    this.environmentObjects.push(waterSurface);
-
-    const objectCount = this.isMobile ? 3 : 6;
-
-    // Add coral-like structures
-    for (let i = 0; i < objectCount; i++) {
-      const angle = (i / objectCount) * Math.PI * 2;
-      const distance = 2 + Math.random() * 2.5;
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
-
-      const coral = this.createCoral();
-      coral.position.set(x, -0.4, z);
-      this.scene.add(coral);
-      this.environmentObjects.push(coral);
-    }
-
-    // Add seaweed
-    for (let i = 0; i < objectCount; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * 4;
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
-
-      const seaweed = this.createSeaweed();
-      seaweed.position.set(x, -0.5, z);
-      this.scene.add(seaweed);
-      this.environmentObjects.push(seaweed);
-    }
+    // All water, coral, and environment objects are now handled by procedural terrain
+    // BiomeRenderer no longer creates environment objects
   }
 
   /**
    * Create cave biome with stalactites and dark atmosphere
+   * Cave elements are now handled by procedural terrain
    */
   private createCaveBiome(): void {
-    // Update ground texture to mysterious purple-tinted cave floor
-    (this.groundMesh.material as THREE.MeshPhongMaterial).color.setHex(0x443355);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).shininess = 10;
-    (this.groundMesh.material as THREE.MeshPhongMaterial).emissive.setHex(0x221133);
-    (this.groundMesh.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.25;
-
-    const objectCount = this.isMobile ? 4 : 8;
-
-    // Add stalactites hanging from above
-    for (let i = 0; i < objectCount; i++) {
-      const angle = (i / objectCount) * Math.PI * 2 + Math.random() * 0.5;
-      const distance = 2 + Math.random() * 2.5;
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
-
-      const stalactite = this.createStalactite();
-      stalactite.position.set(x, 3 + Math.random() * 2, z);
-      this.scene.add(stalactite);
-      this.environmentObjects.push(stalactite);
-    }
-
-    // Add stalagmites on ground
-    for (let i = 0; i < objectCount / 2; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * 4;
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
-
-      const stalagmite = this.createStalagmite();
-      stalagmite.position.set(x, -0.5, z);
-      this.scene.add(stalagmite);
-      this.environmentObjects.push(stalagmite);
-    }
-
-    // Add glowing crystals for ambient light
-    for (let i = 0; i < objectCount / 2; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const distance = 1.5 + Math.random() * 2.5;
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
-
-      const crystal = this.createGlowingCrystal();
-      crystal.position.set(x, -0.3, z);
-      this.scene.add(crystal);
-      this.environmentObjects.push(crystal);
-    }
+    // All stalactites, crystals, and environment objects are now handled by procedural terrain
+    // BiomeRenderer no longer creates environment objects
   }
 
   // ============================================================================
@@ -555,6 +380,6 @@ export class BiomeRenderer {
     this.clearEnvironment();
     this.groundMesh.geometry.dispose();
     (this.groundMesh.material as THREE.Material).dispose();
-    this.scene.remove(this.groundMesh);
+    // Ground mesh is no longer added to scene, so no need to remove it
   }
 }

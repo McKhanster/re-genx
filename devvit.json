@@ -16,6 +16,12 @@
   "media": {
     "dir": "assets"
   },
+  "permissions": {
+    "redis": true,
+    "http": {
+      "domains": ["generativelanguage.googleapis.com", "generativeai.googleapis.com"]
+    }
+  },
   "menu": {
     "items": [
       {
