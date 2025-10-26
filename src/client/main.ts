@@ -728,7 +728,7 @@ function animate(): void {
   
   // Animate creature with fluid organic motion and performance-adjusted plasma speed
   const plasmaSpeed = sceneManager.getPlasmaSpeed();
-  creatureRenderer.pulsate(deltaTimeSeconds, plasmaSpeed);
+  creatureRenderer.pulsate(deltaTimeSeconds);
 
   sceneManager.render();
 }

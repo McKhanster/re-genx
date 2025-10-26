@@ -33,6 +33,9 @@ import {
   validateUsername,
   ValidationError,
 } from './utils/input-validator';
+import { GeminiProcessor } from './llm/gemini-processor';
+import { ContextBuilder } from './llm/context-builder';
+import { MutationCache } from './llm/mutation-cache';
 
 
 const app = express();
@@ -62,6 +65,18 @@ const evolutionScheduler = new EvolutionScheduler(
   careSystem,
   familiarManager
 );
+
+// Initialize LLM components
+const contextBuilder = new ContextBuilder(redis);
+const mutationCache = new MutationCache(redis);
+
+// Initialize Gemini processor if API key is available
+let geminiProcessor: GeminiProcessor | null = null;
+if (process.env.GEMINI_API_KEY) {
+  geminiProcessor = new GeminiProcessor(process.env.GEMINI_API_KEY);
+} else {
+  console.warn('GEMINI_API_KEY not found - LLM mutation generation will be disabled');
+}
 
 /**
  * Helper function to get username with dev fallback
@@ -499,6 +514,86 @@ router.post<unknown, MutationChooseResponse | ErrorResponse, MutationChooseReque
 
       res.status(500).json({
         error: error instanceof Error ? error.message : 'Failed to apply mutation',
+      });
+    }
+  }
+);
+
+// ============================================================================
+// LLM Mutation Generation API Endpoints
+// ============================================================================
+
+/**
+ * Generate mutation options using LLM
+ * Accepts POST requests with creature ID and user context
+ * Returns JSON array of mutation options with 5-minute caching
+ */
+router.post<unknown, { options: import('./llm/gemini-processor').MutationOption[] } | ErrorResponse>(
+  '/api/mutation/generate',
+  async (req, res): Promise<void> => {
+    try {
+      // Get userId from Reddit context with dev fallback
+      const username = await getUsernameWithFallback();
+      const validatedUsername = validateUsername(username);
+
+      // Get creatureId from request body
+      const { creatureId } = req.body as { creatureId?: string };
+      
+      if (!creatureId) {
+        res.status(400).json({ error: 'creatureId is required' });
+        return;
+      }
+
+      const validatedCreatureId = validateCreatureId(creatureId);
+
+      // Check if Gemini processor is available
+      if (!geminiProcessor) {
+        res.status(503).json({ error: 'LLM service not available - GEMINI_API_KEY not configured' });
+        return;
+      }
+
+      // Build mutation context using ContextBuilder
+      const context = await contextBuilder.buildMutationContext(validatedUsername, validatedCreatureId);
+
+      // Check cache first
+      const cachedOptions = await mutationCache.get(context);
+      if (cachedOptions) {
+        await mutationCache.trackCacheHit(validatedCreatureId);
+        res.json({ options: cachedOptions });
+        return;
+      }
+
+      // Generate mutations using Gemini
+      await mutationCache.trackCacheMiss(validatedCreatureId);
+      const options = await geminiProcessor.generateMutationOptions(context);
+
+      // Cache the results with 5-minute TTL
+      await mutationCache.set(context, options);
+
+      res.json({ options });
+    } catch (error) {
+      console.error('Error in /api/mutation/generate:', error);
+
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+
+      // Handle specific error types
+      if (error instanceof Error) {
+        if (error.message.includes('not found')) {
+          res.status(404).json({ error: error.message });
+          return;
+        }
+        
+        if (error.message.includes('Timeout')) {
+          res.status(408).json({ error: 'LLM request timed out - please try again' });
+          return;
+        }
+      }
+
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to generate mutations',
       });
     }
   }

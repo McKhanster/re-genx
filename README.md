@@ -1,52 +1,181 @@
 # Re-GenX: Personal Creature Companion
 
-> **A Tamagotchi-style creature care game for Reddit** where you nurture your own unique familiar through feeding, playing, and giving attention. Watch your lustrous, living creature evolve with player-directed mutations in a dramatic 3D spotlight environment.
+> **A revolutionary 3D creature care game for Reddit** where you nurture your own living, breathing familiar through feeding, playing, and giving attention. Watch your plasma-powered organism evolve with player-directed mutations in a stunning spotlight environment featuring cutting-edge GLSL shaders and procedural cell geometry.
 
-**🎮 Play directly on Reddit** • **🎨 Stunning Three.js 3D graphics** • **🧬 Player-controlled evolution** • **🔒 Privacy-first design** • **🔊 Procedural sound system** • **✨ Organic blob creature**
+**🎮 Play directly on Reddit** • **🎨 Advanced Three.js 3D graphics** • **🧬 Player-controlled evolution** • **🔒 Privacy-first design** • **🔊 Procedural sound system** • **✨ Living plasma organism**
 
 ---
 
 ## What is Re-GenX?
 
-Re-GenX is a **personal creature companion game** built for Reddit where you care for your own unique familiar—a living, pulsating organic blob creature displayed in a dramatic spotlight setting. Like a digital Tamagotchi, you must actively nurture your familiar through feeding, playing, and giving attention, or risk having it removed due to neglect.
+Re-GenX is a **next-generation creature companion game** built for Reddit where you care for your own unique familiar—a living, breathing plasma organism with advanced cellular structure displayed in a dramatic spotlight setting. Unlike traditional virtual pets, your familiar is a **biological entity** powered by custom GLSL shaders and Voronoi cell geometry that creates a truly living appearance.
 
-Your familiar exists in a **dynamic biome environment** (jungle, rocky mountain, desert, ocean, or cave) on a circular platform, surrounded by complete darkness beyond a 10-meter visibility radius. You can **rotate the camera 360°** around your familiar to view it from all angles at eye level (4 feet above ground), creating an intimate, theatrical viewing experience reminiscent of a museum exhibit or stage performance.
+Your familiar exists as a **plasma-powered organism** with 40-90 organic cells creating a biological surface structure. Each cell pulses with life through advanced shader technology, featuring dynamic color gradients, Fresnel rim lighting, and animated plasma effects. The creature literally breathes and moves with multi-octave Simplex noise animation, creating the most realistic virtual life form ever seen in a browser game.
 
-The game features **instant state restoration**—when you return to the game, your complete familiar state (including all mutations, stats, biome, and care level) loads in under 2 seconds with a loading indicator. Your familiar's appearance and all applied mutations are automatically restored from Redis, ensuring it looks exactly as you left it.
+The game features **instant state restoration**—when you return to the game, your complete familiar state (including all mutations, stats, biome, and care level) loads in under 2 seconds. Your familiar's cellular structure, plasma effects, and all applied mutations are automatically restored, ensuring it looks exactly as you left it.
 
-**Core Gameplay Loop:**
-1. **Care for your familiar** - Feed, play, and give attention to earn Evolution Points and maintain Care Meter
-2. **Earn Evolution Points** - Each care action rewards 5-15 EP based on the action type
-3. **Trigger mutations** - Spend 100 EP to choose from 3-5 trait options (legs, color, size, appendages, patterns)
-4. **Watch it evolve** - Your familiar transforms with 2-3 second elastic animations showing your chosen traits
-5. **Manage stats** - Every mutation has trade-offs affecting mobility, senses, survival, cognition, and vitals
-6. **Avoid neglect** - Keep Care Meter above 0 or your familiar will be removed after 24 hours
+**Revolutionary Features:**
+1. **Living Plasma Technology** - Custom GLSL shaders create a truly biological appearance with dynamic color flow
+2. **Cellular Structure** - Voronoi cell geometry with 40-90 organic cells creates realistic biological surface
+3. **Advanced Animation** - Multi-octave Simplex noise drives per-vertex motion for lifelike breathing
+4. **Player-Directed Evolution** - Choose mutations from trait options, watch 2-3 second elastic animations
+5. **Care-Based Survival** - Active nurturing required or familiar will be removed after 24 hours of neglect
+6. **Procedural Sound** - All audio generated in real-time using Web Audio API without external files
 
-**Advanced Visual Features:**
-- **Living Plasma Creature**: Voronoi cell-based geometry with custom GLSL plasma shaders creates a truly biological, pulsating organism
-- **Dynamic Shader System**: Real-time color gradients, Fresnel rim lighting, and animated glow effects driven by custom vertex and fragment shaders
-- **Procedural Animation**: Multi-octave Simplex noise (3 octaves) drives organic vertex motion for truly lifelike breathing and pulsating movement
-- **Post-Processing Pipeline**: Atmospheric bloom effects enhance the ethereal glow of your familiar
-- **Adaptive Cell Geometry**: 40-90 Voronoi cells on mobile/desktop create organic, biological surface structure
-- **Dynamic Care States**: Creature appearance changes based on care level (bright cyan plasma when happy, dull gray when sad)
+**Revolutionary Visual Technology:**
+- **Living Plasma Organism**: Advanced GLSL shaders create dynamic color gradients and animated plasma effects that flow across the creature's surface
+- **Cellular Biology**: Voronoi cell geometry with 40-90 organic cells creates a realistic biological structure with natural irregularity
+- **Fresnel Rim Lighting**: Edges glow brighter when viewed at angles, creating an ethereal, living appearance
+- **Multi-Octave Animation**: Three layers of Simplex noise (1x, 2x, 4x frequency) drive per-vertex motion for lifelike breathing
+- **Skeletal Visualization**: Glowing cyan skeletal frame displayed alongside the creature reveals its internal structure
+- **Adaptive Performance**: Automatically adjusts cell count and shader complexity based on device capabilities
 
 ---
 
-## Quick Start
+## How to Play Re-GenX
 
-**New to Re-GenX?** Here's everything you need to know in 30 seconds:
+### Getting Started (First Time)
 
-1. **Click "Play"** on a Re-GenX post to launch the game in fullscreen
-2. **Your familiar appears** as a living, pulsating organic blob on a circular platform, surrounded by darkness
-3. **Drag to rotate** the camera 360° around your familiar at eye level (touch and swipe on mobile)
-4. **Click "▼ MENU"** at the top-center to open care actions
-5. **Feed, Play, or give Attention** to earn Evolution Points and keep your familiar happy (5-minute cooldowns)
-6. **Spend 100 EP** on the "⚡ Evolve" button to choose mutations and transform your familiar
-7. **Keep Care Meter above 0** or your familiar will be removed after 24 hours
+1. **Launch the Game**
+   - Find a Re-GenX post on Reddit
+   - Click the "Play" button to open the game in fullscreen
+   - The game loads with a dramatic spotlight illuminating your familiar
 
-**That's it!** The game auto-saves and restores your complete familiar state (including all mutations) in under 2 seconds. Just remember to check in regularly to keep your familiar healthy.
+2. **Meet Your Living Familiar**
+   - Your familiar appears as a **living plasma organism** with cellular structure
+   - Watch the **dynamic color flow** across its surface powered by GLSL shaders
+   - Observe the **breathing animation** as each cell pulses with life
+   - Notice the **glowing skeletal frame** displayed next to your familiar
 
-**Sound:** Adjust volume or mute sounds using the speaker icon (🔊) in the top-right corner.
+3. **Privacy Choice** (New Users Only)
+   - A dialog appears asking about "Personality Reflection"
+   - **Opt In**: Future mutations influenced by your Reddit posting patterns
+   - **Opt Out**: All mutations will be completely random
+   - Your choice is saved and can be changed later
+
+4. **Explore the Environment**
+   - **Drag to rotate** the camera 360° around your familiar (mouse or touch)
+   - Your familiar sits on a **circular platform** in one of five biomes
+   - **Darkness surrounds** beyond the 10-meter visibility radius
+   - **Biome objects** populate the environment (plants, rocks, coral, etc.)
+
+### Core Gameplay: Caring for Your Familiar
+
+Your familiar needs regular care to survive. Perform three types of care actions:
+
+**🍖 Feed** (+15 Care Meter, +10 Evolution Points)
+- Click "▼ MENU" at top-center to open the HUD panel
+- Click the "Feed" button in the Care Actions section
+- Watch your familiar perform an **eating animation** with expansion and brighter glow
+- See **floating numbers** show your rewards (+15 Care, +10 EP)
+- Button enters **5-minute cooldown** with live countdown timer
+
+**🎾 Play** (+10 Care Meter, +15 Evolution Points)
+- Click the "Play" button in the Care Actions section
+- Watch your familiar **bounce and spin** with pulsing glow effects
+- Earn more Evolution Points for this higher-energy interaction
+- Button shows cooldown timer during 5-minute wait period
+
+**💚 Attention** (+5 Care Meter, +5 Evolution Points)
+- Click the "Attention" button for a gentle care action
+- Watch your familiar perform a **happy pulse** with warm glow
+- Smaller rewards but no cooldown conflicts with other actions
+- Perfect for quick check-ins when other actions are on cooldown
+
+### Evolution System: Transform Your Familiar
+
+Once you've earned 100 Evolution Points through care actions:
+
+**Trigger Evolution**
+1. Look for the **"⚡ Evolve"** button at the bottom-center of screen
+2. When you have 100+ EP, the button glows with pulsing animation
+3. Click "Evolve" to spend 100 EP and open the trait selection panel
+
+**Choose Your Mutation**
+1. A modal appears showing **3-5 trait options** from one category:
+   - **Legs**: 2, 4, 6, or 8 legs (affects mobility stats)
+   - **Color**: Red, blue, green, purple, or gold (aesthetic with minor stat effects)
+   - **Size**: Tiny, small, medium, large, or giant (major stat trade-offs)
+   - **Appendages**: Wings, horns, tentacles, or tail (unique stat bonuses)
+   - **Patterns**: Spots, stripes, scales, or fur (defense and stealth bonuses)
+
+2. Each option shows a **preview icon** and **stat effects**
+3. Click "Select" on your preferred trait or "Cancel" to abort
+4. **5-minute session timeout** if no selection is made
+
+**Watch the Transformation**
+1. Your familiar transforms with a **2-3 second elastic animation**
+2. **Floating numbers** show stat changes (green for increases, red for decreases)
+3. **Confirmation message** appears: "✨ Evolution Complete! [Trait Name] applied"
+4. Your familiar now displays the new mutation permanently
+5. HUD updates with new stats and remaining Evolution Points
+
+### Managing Your Familiar's Health
+
+**Care Meter (0-100)**
+- Displayed in top-right corner and HUD menu
+- **Happy (50-100)**: Vibrant plasma colors, active animation, positioned at normal height
+- **Neutral (20-50)**: Muted colors, slower animation, slightly lower position
+- **Sad (0-20)**: Dull gray colors, minimal animation, droops noticeably lower
+
+**Evolution Points Balance**
+- Displayed in bottom-left corner and HUD menu
+- Earn 5-15 EP per care action depending on type
+- Save up 100 EP to trigger controlled mutations
+- Balance updates instantly after each care action
+
+**Neglect Warnings**
+- **Care Meter < 20**: ⚠️ warning appears in HUD with pulsing red animation
+- **Care Meter = 0**: Full-screen removal warning with 24-hour countdown timer
+- **Removal Prevention**: "Care Now" button opens HUD for immediate action
+
+### Advanced Features
+
+**Sound System**
+- Click the **🔊 speaker icon** in top-right to open sound settings
+- Adjust **master volume** (overall game sounds, default 70%)
+- Adjust **ambient volume** (biome background sounds, default 30%)
+- **Enable/disable** all sounds with checkbox
+- All sounds are **procedurally generated** - no files to download!
+
+**Biome Environments**
+- Your familiar lives in one of **five unique biomes**:
+  - **Jungle**: Dark green ground with plants and foliage
+  - **Rocky Mountain**: Gray rocky surface with boulders and pebbles  
+  - **Desert**: Sandy ground with cacti and sand dunes
+  - **Ocean**: Blue water surface with coral and seaweed
+  - **Cave**: Dark rocky floor with stalactites and glowing crystals
+- Biome is **randomly selected** when your familiar is created
+- Each biome has **unique ambient sounds** that loop continuously
+
+**HUD Interface**
+- **Always-visible corners** show key info (Age, Care Meter, Evolution Points, Warnings)
+- **Slide-down menu** (▼ MENU button) reveals detailed stats and care actions
+- **Real-time updates** when stats change from mutations or care actions
+- **Mobile-optimized** with touch-friendly 44px minimum button sizes
+- **Keyboard shortcut**: Press ESC to close the menu panel
+
+### Tips for Success
+
+1. **Check in regularly** - Care Meter decays over time, aim for daily visits
+2. **Rotate care actions** - Each has a 5-minute cooldown, so alternate between them
+3. **Save Evolution Points** - Wait until you have 100+ EP before evolving
+4. **Consider stat trade-offs** - Larger size = more attack/defense but less speed
+5. **Watch your familiar's mood** - Plasma colors and animation reflect care level
+6. **Use sound cues** - Each action has a unique sound effect for feedback
+7. **Plan mutations carefully** - Each choice permanently affects your familiar's stats
+
+### What Makes This Game Unique
+
+**Living Technology**: Your familiar isn't just animated—it's powered by advanced cellular biology simulation with real-time plasma effects that create a truly living appearance.
+
+**Scientific Visualization**: The skeletal frame system lets you see your familiar's internal structure, like viewing an X-ray or anatomical diagram of a living organism.
+
+**Procedural Everything**: From the cellular geometry to the sound effects, everything is generated in real-time using advanced algorithms, creating a unique experience that requires no external assets.
+
+**Privacy-First Evolution**: Optional personality reflection analyzes only your public Reddit posts (with consent) to influence mutations, creating a familiar that truly reflects your interests while respecting your privacy.
+
+**Theatrical Presentation**: The dramatic spotlight effect and 360° camera create an intimate viewing experience like observing a rare specimen in a museum or laboratory setting.
 
 ---
 
@@ -294,23 +423,48 @@ Once you've earned 100 Evolution Points through care actions, you can trigger a 
 - Menu panel scrolls if content exceeds viewport height
 - All touch targets are 44x44px minimum for accessibility
 
-## What Makes Re-GenX Unique?
+## What Makes Re-GenX Revolutionary?
 
-Re-GenX stands out as an innovative creature care game with several groundbreaking features:
+Re-GenX represents a breakthrough in browser-based creature simulation, combining cutting-edge graphics technology with innovative gameplay mechanics:
 
-**🎭 Theatrical Presentation**: Your familiar is displayed like a museum exhibit or stage performance—spotlit from above (20.0 intensity from 12 units high) on a circular platform, surrounded by complete darkness. The dramatic lighting with subtle atmospheric bloom creates an intimate, focused viewing experience unlike typical 3D games.
+### 🧬 Living Cellular Biology
+**Advanced GLSL Shader System**: Your familiar is powered by custom vertex and fragment shaders that create dynamic plasma effects flowing across its surface. The Fresnel rim lighting makes edges glow brighter when viewed at angles, creating an ethereal, truly living appearance that responds to your viewing angle in real-time.
 
-**💎 Living Plasma Organism with Advanced Shaders**: The creature features custom GLSL plasma shaders integrated with Voronoi cell geometry that create a truly biological, living appearance. The plasma vertex shader calculates view direction and normals for Fresnel-based rim lighting, while the plasma fragment shader generates dynamic color gradients, cell edge glow, and animated plasma effects. Multi-octave Simplex noise (3 octaves at 1x, 2x, 4x frequency) drives per-vertex animation—your familiar literally breathes and pulses with life through shader-driven effects. The cell-based geometry (40-90 cells) creates an organic, biological surface structure that enhances the living appearance.
+**Voronoi Cell Structure**: Unlike simple geometric shapes, your familiar has a biological cellular structure with 40-90 organic cells distributed using the Fibonacci sphere algorithm. Each cell has 5-8 irregular sides with natural depth variation, creating a realistic biological surface that looks and moves like living tissue.
 
-**🎮 Tamagotchi Meets 3D**: Combines the emotional attachment of classic virtual pets with stunning Three.js 3D graphics and cutting-edge shader technology. Your familiar's appearance dynamically changes based on care level—vibrant plasma colors (cyan/magenta/purple/teal) with active animation when happy (Care Meter 50-100), muted colors when neutral (20-50), dull gray with disabled plasma when sad (0-20), with corresponding changes in glow intensity (0.8 to 0.2) and vertical position (1.2 to 1.0 units).
+**Multi-Octave Animation**: Three layers of Simplex noise (1x, 2x, 4x frequency) drive per-vertex motion across the entire surface. This creates smooth, continuous breathing and pulsating movement that makes your familiar appear genuinely alive—not just animated.
 
-**🧬 Player-Directed Evolution**: Unlike random mutation systems, you choose exactly which traits to evolve. Spend 100 Evolution Points to select from 3-5 trait options in categories like legs, eyes, wings, spikes, tentacles, or horns. Each mutation applies with 85-95% control (5-15% randomness for organic feel) and animates over 2-3 seconds with elastic ease-out effects.
+### 🔬 Scientific Visualization
+**Skeletal Frame Display**: A glowing cyan skeletal structure appears next to your familiar, revealing its internal framework like an X-ray or anatomical diagram. This scientific visualization helps you understand your familiar's biological structure and adds an educational element to the experience.
 
-**📊 Real-Time Visual Feedback**: Every action has immediate visual feedback—floating numbers show stat changes with color coding (green for increases, red for decreases), buttons pulse when clicked with glow effects, the familiar animates in response to care (eating, bouncing, happy pulse), and toast notifications slide down from the top to keep you informed of all events.
+**Procedural Geometry**: Everything from the cellular surface to the skeletal frame is generated using advanced mathematical algorithms. No pre-made 3D models—your familiar is built from pure code using Fibonacci sequences, Voronoi tessellation, and noise functions.
 
-**🔒 Privacy-First Design**: Optional personality reflection system that analyzes your public Reddit posts to influence mutations, but only with explicit consent shown in a clear dialog on first play. You can opt out anytime for completely random mutations. Only public posts from the last 30 days are analyzed, never browsing history or private data.
+### 🎭 Theatrical Presentation
+**Museum-Quality Lighting**: A single powerful spotlight (20.0 intensity) illuminates your familiar from above, creating dramatic shadows and highlights. The surrounding darkness beyond 10 meters creates an intimate, focused viewing experience like observing a rare specimen in a laboratory or museum.
 
-**📱 Mobile-First Architecture**: Automatically detects your device and adjusts quality—30fps target on mobile with 48-segment geometry, 60fps on desktop with 96-segment geometry. Touch controls work seamlessly alongside mouse controls. LOD (Level of Detail) system dynamically adjusts quality multiplier (0.5 on mobile, 1.0 on desktop).
+**360° Observation**: Rotate freely around your familiar at eye level (4 feet above ground) to observe it from any angle. The camera maintains perfect focus on your creature while you explore its cellular structure and mutations from all perspectives.
+
+### 🎮 Next-Generation Virtual Pet
+**Emotional Care System**: Your familiar's plasma colors and animation intensity directly reflect its emotional state. Happy familiars pulse with vibrant cyan, magenta, and purple plasma effects, while neglected ones become dull gray with minimal animation—creating genuine emotional attachment.
+
+**Player-Directed Evolution**: Choose exactly which traits to evolve from scientifically-categorized options (legs, appendages, size, patterns, colors). Watch 2-3 second elastic animations as your familiar transforms, with floating numbers showing precise stat changes.
+
+**Consequence-Based Gameplay**: Neglect has real consequences—familiars with Care Meter at 0 for 24 hours are permanently removed. This creates genuine responsibility and emotional investment in your creature's wellbeing.
+
+### 🔊 Procedural Audio Ecosystem
+**Zero-File Audio System**: All sounds are generated in real-time using Web Audio API oscillators and noise functions. No audio files to download—sounds are created mathematically and played instantly, including unique biome ambient tracks for each environment.
+
+**Biome Soundscapes**: Each of the five biomes has its own procedurally generated ambient sound loop—jungle bird calls, mountain wind, desert breeze, ocean waves, and cave drips—all created from pure code.
+
+### 🔒 Privacy-Respecting Personalization
+**Ethical AI Integration**: Optional personality reflection analyzes only your public Reddit posts (with explicit consent) to influence mutations. Gaming posts might lead to tactical mutations, nature posts to organic traits—but only if you opt in, and you can change your mind anytime.
+
+**Transparent Data Use**: Clear explanation of what data is analyzed (public posts from last 30 days), what isn't tracked (browsing history, private messages), and how it influences gameplay (posting patterns create trait biases).
+
+### 📱 Universal Accessibility
+**Adaptive Performance**: Automatically detects your device and adjusts cellular complexity, shader quality, and frame rate targets. Mobile users get 30fps with 40 cells, desktop users get 60fps with 90 cells—both maintain the living appearance.
+
+**Touch-Optimized Interface**: All interactive elements meet 44px minimum touch targets. The HUD system works seamlessly with both mouse and touch input, with gesture-based camera rotation that feels natural on any device.
 
 ---
 
