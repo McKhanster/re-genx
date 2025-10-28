@@ -229,6 +229,53 @@ export interface PrivacyOptInResponse {
 }
 
 // ============================================================================
+// Creature Personality API Types
+// ============================================================================
+
+export interface CreatureInteractRequest {
+  creatureId: string;
+  eventType: 'birth' | 'feeding' | 'mutation' | 'hourly_evolution';
+  context?: {
+    mutationId?: string;
+    careAction?: string;
+    [key: string]: any;
+  };
+}
+
+export interface CreaturePersonalityResponse {
+  personality: {
+    mood: string;
+    energy: number;
+    sound: string;
+    movement: string;
+    memory?: string;
+  };
+  timestamp: number;
+  cached: boolean;
+}
+
+export interface CreaturePersonalityStateResponse {
+  personality: {
+    mood: string;
+    energy: number;
+    sound: string;
+    movement: string;
+    memory?: string;
+  } | null;
+  timestamp: number;
+  creatureId: string;
+}
+
+export interface PrivacyConsentRequest {
+  consent: boolean;
+}
+
+export interface PrivacyConsentResponse {
+  success: boolean;
+  consentStatus: boolean;
+}
+
+// ============================================================================
 // Legacy API Response Types (from template)
 // ============================================================================
 

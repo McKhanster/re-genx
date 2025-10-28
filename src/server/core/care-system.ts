@@ -83,7 +83,7 @@ export class CareSystem {
       // Update neglect warning status
       await this.familiarManager.updateCareMeter(userId, careMeter);
 
-      // Set cooldown (5 seconds for testing - change to 5 * 60 * 1000 for production)
+      // Set cooldown (5 seconds for testing)
       const cooldownMs = 5 * 1000;
       await this.safeRedisOperation(
         () => this.redis.set(cooldownKey, (Date.now() + cooldownMs).toString(), { expiration: new Date(Date.now() + cooldownMs) }),

@@ -10,20 +10,24 @@ export const createPost = async () => {
     throw new Error('subredditName is required');
   }
 
+  // Use the working local asset path
+  const backgroundUri = 'regenx.png'; // This should work with media.dir: "assets"
+  console.log(`[CreatePost] Creating post with splash screen background: ${backgroundUri}`);
+
   return await reddit.submitCustomPost({
+    subredditName: subredditName,
+    title: 'Re-GenX - Your Personal Familiar',
     splash: {
-      // Splash Screen Configuration
-      appDisplayName: 'Re-GenX',
-      backgroundUri: 'default-splash.png',
-      buttonLabel: 'Play',
-      description: 'Nurture your own evolving familiar. Feed, play, and watch it grow into something unique.',
+      appDisplayName: 'Re-GenX', // only required field
+      backgroundUri: backgroundUri,
+      buttonLabel: 'Start Playing',
+      description:
+        'Nurture your own evolving familiar. Feed, play, and watch it grow into something unique.',
       heading: 'Your Familiar Awaits',
-      appIconUri: 'default-icon.png',
     },
     postData: {
       gameState: 'initial',
+      score: 0,
     },
-    subredditName: subredditName,
-    title: 'Re-GenX - Your Personal Familiar',
   });
 };

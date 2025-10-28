@@ -1,8 +1,8 @@
-# Design Document: LLM-Driven Dynamic Mutations
+# Design Document: LLM-Powered Creature Personality System
 
 ## Overview
 
-This design implements an LLM-powered mutation and scene generation system for Re-GenX using Google Gemini API and a custom MCP (Model Context Protocol) server. The system enables contextual, dynamic mutations that respond to creature state, player activity, and environmental factors through real-time Three.js scene manipulation.
+This design implements an LLM-powered creature personality system for Re-GenX using Google Gemini API within Devvit's serverless architecture. The system creates living, responsive creatures with unique personalities that evolve over time, respond to player interactions, and reflect subreddit themes while maintaining strict privacy compliance and cost efficiency.
 
 ## Architecture
 
@@ -10,37 +10,41 @@ This design implements an LLM-powered mutation and scene generation system for R
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         Devvit Server                            │
+│                    Devvit Serverless Backend                     │
 │  ┌────────────────────────────────────────────────────────────┐ │
-│  │                    MCP Server (Node.js)                     │ │
+│  │                    API Endpoints                            │ │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  │ │
-│  │  │ LLM Processor│  │Scene State   │  │ Command         │  │ │
-│  │  │ (Gemini API) │  │Manager       │  │ Executor        │  │ │
+│  │  │/api/creature/│  │/api/creature/│  │/api/privacy/    │  │ │
+│  │  │interact      │  │personality   │  │consent          │  │ │
 │  │  └──────┬───────┘  └──────┬───────┘  └────────┬────────┘  │ │
 │  │         │                  │                    │           │ │
 │  │  ┌──────┴──────────────────┴────────────────────┴────────┐ │ │
-│  │  │           WebSocket Server (Port 8082)                 │ │ │
+│  │  │              Creature Brain (Gemini API)              │ │ │
+│  │  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐ │ │
+│  │  │  │Gemini       │ │Subreddit    │ │Trigger          │ │ │
+│  │  │  │Service      │ │Analyzer     │ │Manager          │ │ │
+│  │  │  └─────────────┘ └─────────────┘ └─────────────────┘ │ │
 │  │  └────────────────────────┬───────────────────────────────┘ │ │
 │  └───────────────────────────┼─────────────────────────────────┘ │
 │                              │                                   │
 │  ┌───────────────────────────┼─────────────────────────────────┐ │
 │  │                    Redis Storage                            │ │
-│  │  • Scene State Cache  • Mutation Cache  • Fallback Flags   │ │
+│  │  • Personality State  • Response Cache  • Privacy Consent  │ │
 │  └─────────────────────────────────────────────────────────────┘ │
 └──────────────────────────────┼───────────────────────────────────┘
-                               │ WebSocket
+                               │ HTTP API Calls
                                │
 ┌──────────────────────────────┼───────────────────────────────────┐
 │                       Client (Browser)                            │
 │  ┌────────────────────────────────────────────────────────────┐ │
 │  │                  Three.js Scene Manager                     │ │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  │ │
-│  │  │ Creature     │  │ Biome        │  │ Mutation        │  │ │
-│  │  │ Renderer     │  │ Renderer     │  │ Geometry Gen    │  │ │
+│  │  │ Creature     │  │ Personality  │  │ Privacy         │  │ │
+│  │  │ Renderer     │  │ Display      │  │ Consent UI      │  │ │
 │  │  └──────────────┘  └──────────────┘  └─────────────────┘  │ │
 │  │                                                             │ │
 │  │  ┌──────────────────────────────────────────────────────┐ │ │
-│  │  │         WebSocket Client (Scene State Sync)          │ │ │
+│  │  │           API Client + Personality Updates            │ │ │
 │  │  └──────────────────────────────────────────────────────┘ │ │
 │  └────────────────────────────────────────────────────────────┘ │
 └───────────────────────────────────────────────────────────────────┘

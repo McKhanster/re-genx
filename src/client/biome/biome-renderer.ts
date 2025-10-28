@@ -38,7 +38,7 @@ export class BiomeRenderer {
 
     const mesh = new THREE.Mesh(geometry, material);
     mesh.rotation.x = -Math.PI / 2; // Rotate to be horizontal
-    mesh.position.y = -0.5; // Position below creature (raised from -1)
+    mesh.position.y = -5.5; // Position below creature (raised from -1)
     mesh.receiveShadow = !this.isMobile;
 
     return mesh;
@@ -249,7 +249,7 @@ export class BiomeRenderer {
       const arm = new THREE.Mesh(armGeometry, bodyMaterial);
       const side = i === 0 ? 1 : -1;
       arm.position.set(side * 0.2, 0.3, 0);
-      arm.rotation.z = side * Math.PI / 4;
+      arm.rotation.z = (side * Math.PI) / 4;
       cactus.add(arm);
     }
 

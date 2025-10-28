@@ -294,7 +294,7 @@ export class APIClient {
   // ============================================================================
 
   /**
-   * Trigger a controlled mutation (costs 100 EP)
+   * Trigger a controlled mutation (costs 5 EP)
    */
   async triggerMutation(): Promise<MutationTriggerResponse> {
     try {
@@ -307,7 +307,7 @@ export class APIClient {
         this.showError(
           'Not enough Evolution Points',
           undefined,
-          'You need 100 EP to evolve. Care for your familiar to earn more points!'
+          'You need 5 EP to evolve. Care for your familiar to earn more points!'
         );
       } else {
         this.showError(

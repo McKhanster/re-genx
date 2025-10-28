@@ -101,6 +101,14 @@ export class HUDDrawer {
             <div class="hud-menu-section-title">Familiar Stats</div>
             <div id="stats-display"></div>
           </div>
+
+          <!-- Debug Section -->
+          <div class="hud-menu-section">
+            <div class="hud-menu-section-title">Debug</div>
+            <button id="reset-familiar-btn" class="care-btn" style="width: 100%; margin-top: 10px;">
+              🔄 Reset Familiar
+            </button>
+          </div>
         </div>
       </div>
     `;

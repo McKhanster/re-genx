@@ -19,10 +19,37 @@ export interface ActivityPattern {
 export class ContextBuilder {
   constructor(private redis: RedisClient) {}
 
+  /**
+   * Safe Redis operation with retry logic
+   */
+  private async safeRedisOperation<T>(
+    operation: () => Promise<T>,
+    fallback: T,
+    retries = 3
+  ): Promise<T> {
+    for (let i = 0; i < retries; i++) {
+      try {
+        return await operation();
+      } catch (error) {
+        if (i === retries - 1) {
+          console.error('Redis operation failed after retries:', error);
+          return fallback;
+        }
+        // Exponential backoff
+        await new Promise((resolve) => setTimeout(resolve, 100 * (i + 1)));
+      }
+    }
+    return fallback;
+  }
+
   async buildMutationContext(userId: string, creatureId: string): Promise<MutationContext> {
-    // Get creature data from Redis
-    const creatureData = await this.redis.hGetAll(`creature:${creatureId}`);
-    
+    // Get creature data from Redis with error handling
+    const creatureData = await this.safeRedisOperation(
+      () => this.redis.hGetAll(`creature:${creatureId}`),
+      {},
+      3
+    );
+
     if (!creatureData || Object.keys(creatureData).length === 0) {
       throw new Error(`Creature ${creatureId} not found`);
     }
@@ -47,31 +74,40 @@ export class ContextBuilder {
       }
     }
 
-    return {
+    const context: MutationContext = {
       stats,
       mutations: mutations.slice(-3), // Last 3 mutations for context
       biome,
-      activityCategory,
-      creatureId
+      creatureId,
     };
+
+    if (activityCategory) {
+      context.activityCategory = activityCategory;
+    }
+
+    return context;
   }
 
   private async getActivityPattern(userId: string): Promise<ActivityPattern> {
-    const patternData = await this.redis.hGetAll(`activity:${userId}`);
-    
+    const patternData = await this.safeRedisOperation(
+      () => this.redis.hGetAll(`activity:${userId}`),
+      {},
+      3
+    );
+
     if (!patternData || Object.keys(patternData).length === 0) {
       // Return default pattern if no activity data exists
       return {
         categories: {},
         dominantCategory: 'general',
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
       };
     }
 
     return {
       categories: JSON.parse(patternData.categories || '{}'),
       dominantCategory: patternData.dominantCategory || 'general',
-      lastUpdated: parseInt(patternData.lastUpdated || '0')
+      lastUpdated: parseInt(patternData.lastUpdated || '0'),
     };
   }
 }

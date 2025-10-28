@@ -19,28 +19,21 @@ export class CareActionUI {
   private attentionButton: HTMLButtonElement;
   private cooldowns: Map<CareActionType, number> = new Map();
   private cooldownIntervals: Map<CareActionType, number> = new Map();
-  private onCareAction?: (
-    action: CareActionType,
-    result: CareActionResult
-  ) => void;
+  private onCareAction?: (action: CareActionType, result: CareActionResult) => void;
   private onTriggerAnimation?: (action: CareActionType) => void;
 
   constructor() {
     this.createButtons();
     this.feedButton = document.getElementById('feed-btn') as HTMLButtonElement;
     this.playButton = document.getElementById('play-btn') as HTMLButtonElement;
-    this.attentionButton = document.getElementById(
-      'attention-btn'
-    ) as HTMLButtonElement;
+    this.attentionButton = document.getElementById('attention-btn') as HTMLButtonElement;
     this.attachEventListeners();
   }
 
   /**
    * Set callback for when care actions are performed
    */
-  public onAction(
-    callback: (action: CareActionType, result: CareActionResult) => void
-  ): void {
+  public onAction(callback: (action: CareActionType, result: CareActionResult) => void): void {
     this.onCareAction = callback;
   }
 
@@ -80,15 +73,9 @@ export class CareActionUI {
   }
 
   private attachEventListeners(): void {
-    this.feedButton.addEventListener('click', () =>
-      this.handleCareAction('feed')
-    );
-    this.playButton.addEventListener('click', () =>
-      this.handleCareAction('play')
-    );
-    this.attentionButton.addEventListener('click', () =>
-      this.handleCareAction('attention')
-    );
+    this.feedButton.addEventListener('click', () => this.handleCareAction('feed'));
+    this.playButton.addEventListener('click', () => this.handleCareAction('play'));
+    this.attentionButton.addEventListener('click', () => this.handleCareAction('attention'));
   }
 
   private async handleCareAction(action: CareActionType): Promise<void> {
@@ -98,7 +85,7 @@ export class CareActionUI {
     }
 
     const button = this.getButtonForAction(action);
-    
+
     try {
       // Show loading state
       button.classList.add('loading');
@@ -116,8 +103,8 @@ export class CareActionUI {
       // Remove loading state
       button.classList.remove('loading');
 
-      // Set cooldown (5 minutes)
-      this.setCooldown(action, 5 * 60 * 1000);
+      // Set cooldown (5 seconds for testing)
+      this.setCooldown(action, 1 * 1000);
 
       // Play sound effect for care action
       soundManager.playSound(action, 0.7);
@@ -139,14 +126,12 @@ export class CareActionUI {
       }
     } catch (error) {
       console.error(`Care action ${action} failed:`, error);
-      
+
       // Remove loading state on error
       button.classList.remove('loading');
       button.disabled = false;
-      
-      this.showError(
-        error instanceof Error ? error.message : 'Failed to perform action'
-      );
+
+      this.showError(error instanceof Error ? error.message : 'Failed to perform action');
     }
   }
 
@@ -258,13 +243,13 @@ export class CareActionUI {
 
   private showButtonFeedback(action: CareActionType): void {
     const button = this.getButtonForAction(action);
-    
+
     // Add pulse animation class
     button.style.animation = 'none';
     // Force reflow to restart animation
     void button.offsetWidth;
     button.style.animation = 'buttonPulse 0.3s ease-out';
-    
+
     setTimeout(() => {
       button.style.animation = '';
     }, 300);

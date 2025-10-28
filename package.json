@@ -24,7 +24,8 @@
   },
   "dependencies": {
     "@devvit/web": "0.12.1",
-    "@google/generative-ai": "^0.24.1",
+    "@genkit-ai/google-genai": "^1.21.0",
+    "@google/genai": "^1.27.0",
     "@modelcontextprotocol/sdk": "^1.20.2",
     "@types/ws": "^8.18.1",
     "devvit": "0.12.1",

@@ -9,28 +9,50 @@ import { MutationContext, MutationOption } from './gemini-processor.js';
 export class MutationCache {
   constructor(private redis: RedisClient) {}
 
+  /**
+   * Safe Redis operation with retry logic
+   */
+  private async safeRedisOperation<T>(
+    operation: () => Promise<T>,
+    fallback: T,
+    retries = 3
+  ): Promise<T> {
+    for (let i = 0; i < retries; i++) {
+      try {
+        return await operation();
+      } catch (error) {
+        if (i === retries - 1) {
+          console.error('Redis operation failed after retries:', error);
+          return fallback;
+        }
+        // Exponential backoff
+        await new Promise((resolve) => setTimeout(resolve, 100 * (i + 1)));
+      }
+    }
+    return fallback;
+  }
+
   async get(context: MutationContext): Promise<MutationOption[] | null> {
     const key = this.getCacheKey(context);
     
-    try {
-      const cached = await this.redis.get(key);
-      return cached ? JSON.parse(cached) : null;
-    } catch (error) {
-      console.error('Error getting cached mutations:', error);
-      return null;
-    }
+    return await this.safeRedisOperation(
+      async () => {
+        const cached = await this.redis.get(key);
+        return cached ? JSON.parse(cached) : null;
+      },
+      null,
+      3
+    );
   }
 
   async set(context: MutationContext, options: MutationOption[]): Promise<void> {
     const key = this.getCacheKey(context);
     
-    try {
-      // Set with 5-minute TTL (300 seconds)
-      await this.redis.setEx(key, 300, JSON.stringify(options));
-    } catch (error) {
-      console.error('Error caching mutations:', error);
-      // Don't throw - caching failure shouldn't break the flow
-    }
+    await this.safeRedisOperation(
+      () => this.redis.setEx(key, 300, JSON.stringify(options)),
+      undefined,
+      3
+    );
   }
 
   private getCacheKey(context: MutationContext): string {
@@ -54,18 +76,18 @@ export class MutationCache {
   }
 
   async trackCacheHit(creatureId: string): Promise<void> {
-    try {
-      await this.redis.incr(`mutation:cache:hits:${creatureId}`);
-    } catch (error) {
-      console.error('Error tracking cache hit:', error);
-    }
+    await this.safeRedisOperation(
+      () => this.redis.incr(`mutation:cache:hits:${creatureId}`),
+      0,
+      3
+    );
   }
 
   async trackCacheMiss(creatureId: string): Promise<void> {
-    try {
-      await this.redis.incr(`mutation:cache:misses:${creatureId}`);
-    } catch (error) {
-      console.error('Error tracking cache miss:', error);
-    }
+    await this.safeRedisOperation(
+      () => this.redis.incr(`mutation:cache:misses:${creatureId}`),
+      0,
+      3
+    );
   }
 }

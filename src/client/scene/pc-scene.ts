@@ -143,9 +143,15 @@ export class ProceduralElements {
     const geom = new THREE.PlaneGeometry(width, height, actualSegments, actualSegments);
     geom.rotateX(-Math.PI / 2);
 
-    const freq = 0.01;
+    // Scale frequency to maintain same detail density regardless of terrain size
+    const baseFreq = 0.01;
+    const scaleRatio = 400 / width; // Original size / current size
+    const freq = baseFreq * scaleRatio;
     const octaves = isMobile ? 3 : 4; // Fewer octaves on mobile
-    const amp = config.displacementScale;
+    
+    // Scale amplitude (mountain height) proportionally with terrain size
+    const heightScaleRatio = width / 400; // Current size / original size
+    const amp = config.displacementScale * heightScaleRatio;
 
     const positionAttribute = geom.attributes.position;
     if (positionAttribute) {
@@ -196,7 +202,7 @@ export class ProceduralElements {
 
     const mesh = new THREE.Mesh(geom, material);
     mesh.receiveShadow = true;
-    mesh.position.y = -0.5; // Same level as original BiomeRenderer ground
+    mesh.position.y = -5.5; // Same level as original BiomeRenderer ground
 
     return mesh;
   }
@@ -229,8 +235,8 @@ export class ProceduralElements {
     let placed = 0;
 
     for (let i = 0; i < baseCount; i++) {
-      const x = (Math.random() - 0.5) * 300; // Smaller area than original
-      const z = (Math.random() - 0.5) * 300;
+      const x = (Math.random() - 0.5) * 40; // 20 unit radius world
+      const z = (Math.random() - 0.5) * 40;
       const y = sampleHeightAt(terrain.geometry as THREE.BufferGeometry, x, z);
 
       if (y === null) continue;

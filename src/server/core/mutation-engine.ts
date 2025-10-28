@@ -35,7 +35,7 @@ export interface CompatibilityResult {
  * MutationEngine handles controlled and uncontrolled mutations
  *
  * Responsibilities:
- * - Trigger controlled mutations (costs 100 Evolution Points)
+ * - Trigger controlled mutations (costs 5 Evolution Points)
  * - Generate trait options for player choice
  * - Apply chosen mutations with randomness factor (0.85-0.95)
  * - Calculate stat effects based on traits
@@ -68,7 +68,7 @@ export class MutationEngine {
 
   /**
    * Trigger a controlled mutation
-   * Deducts 100 Evolution Points and creates a mutation choice session
+   * Deducts 5 Evolution Points and creates a mutation choice session
    *
    * @param userId - Reddit user ID
    * @returns MutationChoice with session ID and trait options
@@ -87,17 +87,17 @@ export class MutationEngine {
 
       const evolutionPoints = parseInt(data.evolutionPoints || '0');
 
-      if (evolutionPoints < 100) {
+      if (evolutionPoints < 5) {
         throw new Error(
-          `Insufficient evolution points. You have ${evolutionPoints} EP, but need 100 EP.`
+          `Insufficient evolution points. You have ${evolutionPoints} EP, but need 5 EP.`
         );
       }
 
-      // Deduct 100 evolution points
+      // Deduct 5 evolution points
       await this.safeRedisOperation(
         () =>
           this.redis.hSet(familiarId, {
-            evolutionPoints: (evolutionPoints - 100).toString(),
+            evolutionPoints: (evolutionPoints - 5).toString(),
           }),
         undefined
       );
@@ -301,17 +301,7 @@ export class MutationEngine {
         throw new Error('Invalid option selected');
       }
 
-      // Check compatibility before applying
-      const compatibility = await this.checkMutationCompatibility(familiarId, chosenOption.category);
-
-      if (!compatibility.compatible) {
-        const conflictMessage = compatibility.conflicts.join('; ');
-        const suggestionMessage =
-          compatibility.suggestions.length > 0
-            ? ` Try these instead: ${compatibility.suggestions.join(', ')}`
-            : '';
-        throw new Error(`Mutation incompatible: ${conflictMessage}.${suggestionMessage}`);
-      }
+      // No compatibility restrictions - users can have any mutations they want!
 
       // Apply randomness factor (0.85-0.95 for controlled mutations)
       const randomnessFactor = 0.85 + Math.random() * 0.1;

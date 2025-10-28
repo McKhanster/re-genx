@@ -22,7 +22,7 @@ export class SoundManager {
   private ambientSource: AudioBufferSourceNode | null = null;
   private ambientGain: GainNode | null = null;
   private masterGain: GainNode | null = null;
-  private enabled: boolean = true;
+  private enabled: boolean = false; // Disabled by default to stop constant ringing
   private currentAmbient: SoundType | null = null;
 
   constructor() {

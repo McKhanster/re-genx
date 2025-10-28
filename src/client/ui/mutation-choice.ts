@@ -37,7 +37,7 @@ export class MutationChoiceUI {
         <button class="evolve-btn" id="evolve-btn">
           <span class="evolve-icon">⚡</span>
           <span class="evolve-label">Evolve</span>
-          <span class="evolve-cost">100 EP</span>
+          <span class="evolve-cost">5 EP</span>
         </button>
       </div>
 
@@ -111,19 +111,19 @@ export class MutationChoiceUI {
   public updateEvolveButton(evolutionPoints: number): void {
     if (!this.evolveButton) return;
 
-    if (evolutionPoints < 100) {
+    if (evolutionPoints < 5) {
       this.evolveButton.disabled = true;
       this.evolveButton.classList.add('insufficient-ep');
       const costElement = this.evolveButton.querySelector('.evolve-cost');
       if (costElement) {
-        costElement.textContent = `${evolutionPoints}/100 EP`;
+        costElement.textContent = `${evolutionPoints}/5 EP`;
       }
     } else {
       this.evolveButton.disabled = false;
       this.evolveButton.classList.remove('insufficient-ep');
       const costElement = this.evolveButton.querySelector('.evolve-cost');
       if (costElement) {
-        costElement.textContent = '100 EP';
+        costElement.textContent = '5 EP';
       }
     }
   }
@@ -170,7 +170,7 @@ export class MutationChoiceUI {
         this.evolveButton.classList.remove('loading');
         const icon = '<span class="evolve-icon">⚡</span>';
         const label = '<span class="evolve-label">Evolve</span>';
-        const cost = '<span class="evolve-cost">100 EP</span>';
+        const cost = '<span class="evolve-cost">5 EP</span>';
         this.evolveButton.innerHTML = icon + label + cost;
       }
     }
@@ -333,7 +333,7 @@ export class MutationChoiceUI {
         this.evolveButton.classList.remove('loading');
         const icon = '<span class="evolve-icon">⚡</span>';
         const label = '<span class="evolve-label">Evolve</span>';
-        const cost = '<span class="evolve-cost">100 EP</span>';
+        const cost = '<span class="evolve-cost">5 EP</span>';
         this.evolveButton.innerHTML = icon + label + cost;
       }
     } catch (error) {
@@ -373,7 +373,7 @@ export class MutationChoiceUI {
       this.evolveButton.disabled = false;
       const icon = '<span class="evolve-icon">⚡</span>';
       const label = '<span class="evolve-label">Evolve</span>';
-      const cost = '<span class="evolve-cost">100 EP</span>';
+      const cost = '<span class="evolve-cost">5 EP</span>';
       this.evolveButton.innerHTML = icon + label + cost;
     }
   }

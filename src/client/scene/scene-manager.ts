@@ -37,9 +37,9 @@ export class SceneManager {
   private proceduralVegetation: THREE.Group | null = null;
   private spotlight!: THREE.SpotLight;
   private fog!: THREE.Fog;
-  private cameraAngle: number = 0; // Horizontal rotation (azimuth)
-  private cameraElevation: number = Math.PI / 6; // Vertical angle (elevation) - start at 30 degrees
-  private cameraRadius: number = 16;
+  private cameraAngle: number = Math.PI / 4; // Horizontal rotation (azimuth) - start at 45 degrees
+  private cameraElevation: number = Math.PI / 3; // Vertical angle (elevation) - 60 degrees, looking up slightly
+  private cameraRadius: number = 5;
   private mobile: boolean;
   private targetFPS: number;
   private lastPlasmaSpeed: number = 1.0;
@@ -50,6 +50,13 @@ export class SceneManager {
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+
+    console.log(
+      'SceneManager: Camera created at:',
+      this.camera.position.x,
+      this.camera.position.y,
+      this.camera.position.z
+    );
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: !this.mobile, // Disable antialiasing on mobile for performance
@@ -60,7 +67,7 @@ export class SceneManager {
     this.initCamera();
     this.initLighting();
     this.initRenderer();
-    
+
     // Initialize post-processing after renderer is ready
     this.postProcessing = new PostProcessingManager(
       this.renderer,
@@ -68,14 +75,14 @@ export class SceneManager {
       this.camera,
       this.mobile
     );
-    
+
     // Initialize background gradient renderer (disabled for daylight)
     // this.backgroundGradient = new BackgroundGradientRenderer(this.scene);
     // Create a dummy background gradient for compatibility
     this.backgroundGradient = {
       dispose: () => {},
     } as any;
-    
+
     // Initialize foreground renderer (disabled for daylight)
     // this.foreground = new ForegroundRenderer(this.scene, this.camera, this.mobile);
     // Create a dummy foreground renderer for compatibility
@@ -84,14 +91,14 @@ export class SceneManager {
       setEnabled: () => {},
       dispose: () => {},
     } as any;
-    
+
     // Initialize performance monitor
     this.performanceMonitor = new PerformanceMonitor(this.targetFPS);
-    
+
     // Initialize procedural elements
     this.proceduralElements = new ProceduralElements();
     this.addProceduralTerrain('alien'); // Default to alien theme
-    
+
     this.setupResizeHandler();
   }
 
@@ -113,9 +120,15 @@ export class SceneManager {
    * Initialize camera position and orientation
    */
   private initCamera(): void {
-    // Position camera at initial angle
+    // Position camera at initial angle - updateCameraPosition handles lookAt too
+    console.log('SceneManager: initCamera called');
     this.updateCameraPosition();
-    this.camera.lookAt(0, 0, 0);
+    console.log(
+      'SceneManager: Camera positioned at:',
+      this.camera.position.x,
+      this.camera.position.y,
+      this.camera.position.z
+    );
   }
 
   /**
@@ -203,19 +216,33 @@ export class SceneManager {
    * Update camera position based on current angle and elevation (spherical coordinates)
    */
   private updateCameraPosition(): void {
+    // Camera orbits around creature at (0, 4.7, 0) using spherical coordinates
+    const creatureY = 4.7; // 10 units above terrain (-5.5 + 10 = 4.5, using happy position as default)
+    const cameraDistance = 5;
+
     // Convert spherical coordinates to cartesian
-    // x = r * sin(elevation) * sin(azimuth)
-    // y = r * cos(elevation)
-    // z = r * sin(elevation) * cos(azimuth)
-    
-    const horizontalRadius = Math.sin(this.cameraElevation) * this.cameraRadius;
-    
+    const horizontalRadius = Math.sin(this.cameraElevation) * cameraDistance;
+
     this.camera.position.x = Math.sin(this.cameraAngle) * horizontalRadius;
-    this.camera.position.y = Math.cos(this.cameraElevation) * this.cameraRadius;
+    this.camera.position.y = creatureY + Math.cos(this.cameraElevation) * cameraDistance;
     this.camera.position.z = Math.cos(this.cameraAngle) * horizontalRadius;
-    
+
+    // Debug logging
+    console.log(
+      'Camera position:',
+      this.camera.position.x.toFixed(2),
+      this.camera.position.y.toFixed(2),
+      this.camera.position.z.toFixed(2)
+    );
+    console.log(
+      'Camera angle:',
+      this.cameraAngle.toFixed(2),
+      'elevation:',
+      this.cameraElevation.toFixed(2)
+    );
+
     // Always look at the creature center
-    this.camera.lookAt(0, 1.2, 0);
+    this.camera.lookAt(0, creatureY, 0);
   }
 
   /**
@@ -268,19 +295,19 @@ export class SceneManager {
   public update(deltaTime: number): void {
     // Update foreground parallax based on camera rotation
     this.foreground.updateParallax(this.cameraAngle);
-    
+
     // Update performance monitor
     this.performanceMonitor.update(deltaTime);
-    
+
     // Apply performance-based adjustments each frame
     const settings = this.performanceMonitor.getEffectSettings();
-    
+
     // Connect PerformanceMonitor to PostProcessingManager for bloom intensity adjustment
     this.postProcessing.setBloomIntensity(settings.bloomIntensity);
-    
+
     // Connect PerformanceMonitor to ForegroundRenderer for enable/disable
     this.foreground.setEnabled(settings.foregroundEnabled);
-    
+
     // Store plasma speed setting for CreatureRenderer to use
     // (CreatureRenderer will need to call getPlasmaSpeed() to get this value)
     this.lastPlasmaSpeed = settings.plasmaSpeed;
@@ -411,19 +438,27 @@ export class SceneManager {
   public addProceduralTerrain(theme: 'jungle' | 'desert' | 'alien'): void {
     // Remove existing procedural elements
     this.removeProceduralTerrain();
-    
+
     // Create new terrain
-    this.proceduralTerrain = this.proceduralElements.createTerrain(theme, 400, 400, 64, this.mobile);
+    this.proceduralTerrain = this.proceduralElements.createTerrain(theme, 40, 40, 64, this.mobile);
     this.scene.add(this.proceduralTerrain);
-    
+
     // Create rocks
-    this.proceduralRocks = this.proceduralElements.createRocks(theme, this.proceduralTerrain, this.mobile);
+    this.proceduralRocks = this.proceduralElements.createRocks(
+      theme,
+      this.proceduralTerrain,
+      this.mobile
+    );
     this.scene.add(this.proceduralRocks);
-    
+
     // Create vegetation
-    this.proceduralVegetation = this.proceduralElements.createVegetation(theme, this.proceduralTerrain, this.mobile);
+    this.proceduralVegetation = this.proceduralElements.createVegetation(
+      theme,
+      this.proceduralTerrain,
+      this.mobile
+    );
     this.scene.add(this.proceduralVegetation);
-    
+
     console.log(`Procedural terrain added with theme: ${theme}`);
   }
 
@@ -439,7 +474,7 @@ export class SceneManager {
       }
       this.proceduralTerrain = null;
     }
-    
+
     if (this.proceduralRocks) {
       this.scene.remove(this.proceduralRocks);
       this.proceduralRocks.geometry.dispose();
@@ -448,7 +483,7 @@ export class SceneManager {
       }
       this.proceduralRocks = null;
     }
-    
+
     if (this.proceduralVegetation) {
       this.scene.remove(this.proceduralVegetation);
       this.proceduralVegetation.traverse((child) => {
@@ -462,8 +497,6 @@ export class SceneManager {
       this.proceduralVegetation = null;
     }
   }
-
-
 
   /**
    * Dispose of resources

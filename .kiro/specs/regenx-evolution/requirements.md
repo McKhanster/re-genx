@@ -11,6 +11,7 @@ Re-GenX is a personal creature companion simulator built on Reddit's Devvit plat
 This application MUST comply with Reddit's strict privacy and data protection requirements:
 
 **Prohibited Actions:**
+
 - ❌ **Never track which subreddits a user visits** - Cannot monitor browsing history or subreddit visits
 - ❌ **Never profile users** - Cannot infer personal characteristics (race, religion, politics, health, sexuality, etc.)
 - ❌ **Never surveil users** - Cannot gather intelligence or track users for surveillance purposes
@@ -18,6 +19,7 @@ This application MUST comply with Reddit's strict privacy and data protection re
 - ❌ **Never access private information** - Cannot request passwords, credentials, or personal information
 
 **Permitted Actions:**
+
 - ✅ **Access public posts/comments** - Can analyze user's public Reddit posts and comments (with GetPostsByUserOptions API)
 - ✅ **Track in-app interactions** - Can monitor user behavior within the Re-GenX app only
 - ✅ **Store game data in Redis** - Can persist Familiar state, care history, and evolution data
@@ -25,6 +27,7 @@ This application MUST comply with Reddit's strict privacy and data protection re
 - ✅ **Require explicit consent** - Must get user permission before any data processing or actions on their behalf
 
 **Implementation Requirements:**
+
 1. All user data analysis must be limited to publicly available posts/comments
 2. Activity patterns must be derived from posting behavior, NOT subreddit visits
 3. User must explicitly opt-in to personality reflection features
@@ -32,6 +35,7 @@ This application MUST comply with Reddit's strict privacy and data protection re
 5. Privacy policy and terms of service required if collecting any personal information
 
 **Data Minimization:**
+
 - Only collect data necessary for Familiar evolution and care mechanics
 - Do not store unnecessary user information
 - Aggregate and anonymize data where possible

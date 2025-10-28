@@ -63,7 +63,7 @@
 //     // Generate Voronoi cell geometry based on device capabilities
 //     // const cellCount = this.getCellCount();
 //     // const depthVariation = this.isMobile ? 0.15 : 0.25;
-    
+
 //     // const geometry = CellGeometryGenerator.generateCellGeometry(
 //     //   1.5, // Base radius
 //     //   cellCount,
@@ -522,7 +522,7 @@ export class CreatureRenderer {
     this.scene = scene;
     this.isMobile = isMobile;
     this.mutationMeshes = new Map();
-    
+
     // Set LOD level based on device
     this.lodLevel = isMobile ? 'low' : 'high';
     this.qualityMultiplier = isMobile ? 0.5 : 1.0;
@@ -538,7 +538,7 @@ export class CreatureRenderer {
     this.originalPositions = new Float32Array(positionAttribute.array);
 
     // Add creature to scene at center
-    this.baseMesh.position.set(0, 1.2, 0); // 4 feet above ground
+    this.baseMesh.position.set(0, 5, 0); // At reasonable elevation
     this.scene.add(this.baseMesh);
   }
 
@@ -555,7 +555,7 @@ export class CreatureRenderer {
     const segments = this.getSegmentCount();
 
     // Create sphere geometry with LOD-appropriate detail
-    const geometry = new THREE.SphereGeometry(1000, segments, segments);
+    const geometry = new THREE.SphereGeometry(1, segments, segments);
 
     // Deform the sphere to create irregular blob shape with gentler noise
     const positionAttribute = geometry.getAttribute('position');
@@ -672,10 +672,10 @@ export class CreatureRenderer {
    */
   public setLODLevel(level: 'high' | 'medium' | 'low'): void {
     if (this.lodLevel === level) return;
-    
+
     this.lodLevel = level;
     this.qualityMultiplier = level === 'low' ? 0.5 : level === 'medium' ? 0.75 : 1.0;
-    
+
     console.log(`LOD level changed to: ${level} (quality: ${this.qualityMultiplier})`);
   }
 
@@ -706,6 +706,8 @@ export class CreatureRenderer {
    * @param randomnessFactor - Factor for randomness (0-1)
    */
   public applyMutation(mutation: MutationData, randomnessFactor: number): void {
+    console.log('CreatureRenderer: Applying mutation:', mutation.id, mutation.traits);
+    
     // Generate mutation geometry
     const mutationGeometry = generateMutationGeometry(mutation, randomnessFactor, this.isMobile);
 
@@ -716,6 +718,9 @@ export class CreatureRenderer {
     mesh.position.copy(mutationGeometry.position);
     mesh.scale.copy(mutationGeometry.scale);
     mesh.rotation.copy(mutationGeometry.rotation);
+
+    console.log('CreatureRenderer: Mutation mesh created at position:', mesh.position);
+    console.log('CreatureRenderer: Mutation mesh scale:', mesh.scale);
 
     // Enable shadows if not on mobile
     if (!this.isMobile) {
@@ -728,6 +733,8 @@ export class CreatureRenderer {
 
     // Store reference
     this.mutationMeshes.set(mutation.id, mesh);
+    
+    console.log('CreatureRenderer: Total mutations now:', this.mutationMeshes.size);
   }
 
   /**
@@ -881,19 +888,19 @@ export class CreatureRenderer {
       this.baseMaterial.emissive.setHex(0x666666); // Very dim glow
       this.baseMaterial.emissiveIntensity = 0.1;
       // Creature appears to droop slightly
-      this.baseMesh.position.y = 1.0;
+      this.baseMesh.position.y = 4.5; // 10 units above terrain (-5.5 + 10 = 4.5)
     } else if (careMeter < 50) {
       // Neutral appearance - normal colors, slower pulsing
       this.baseMaterial.color.setHex(0xcccccc); // Light gray
       this.baseMaterial.emissive.setHex(0x888888); // Dim glow
       this.baseMaterial.emissiveIntensity = 0.2;
-      this.baseMesh.position.y = 1.1;
+      this.baseMesh.position.y = 4.6; // 10 units above terrain (-5.5 + 10 = 4.5, slight elevation for neutral)
     } else {
       // Happy appearance - bright colors, active pulsing
       this.baseMaterial.color.setHex(0xe5e4e2); // Platinum
       this.baseMaterial.emissive.setHex(0xaaaaaa); // Warm glow
       this.baseMaterial.emissiveIntensity = 0.3;
-      this.baseMesh.position.y = 1.2;
+      this.baseMesh.position.y = 4.7; // 10 units above terrain (-5.5 + 10 = 4.5, slight elevation for happy)
     }
   }
 
@@ -921,7 +928,7 @@ export class CreatureRenderer {
         case 'play':
           // Bouncing/spinning motion
           const bounceHeight = Math.sin(progress * Math.PI * 3) * 0.5;
-          this.baseMesh.position.y = 1.2 + bounceHeight;
+          this.baseMesh.position.y = 4.7 + bounceHeight; // 10 units above terrain + bounce
           this.baseMesh.rotation.y = progress * Math.PI * 2;
           // Pulse glow
           this.baseMaterial.emissiveIntensity = 0.5 + Math.sin(progress * Math.PI * 6) * 0.3;
@@ -941,7 +948,7 @@ export class CreatureRenderer {
       } else {
         // Reset to normal state
         this.baseMesh.scale.set(1, 1, 1);
-        this.baseMesh.position.y = 1.2;
+        this.baseMesh.position.y = 4.7; // 10 units above terrain
         this.baseMesh.rotation.y = 0;
         this.baseMaterial.emissiveIntensity = 0.5;
       }

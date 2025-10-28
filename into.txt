@@ -1,6 +1,0 @@
-eval "$(ssh-agent -s)"
-ssh-add --apple-use-keychain ~/.ssh/mckhanster
-ssh -T git@github.com
-
-
-

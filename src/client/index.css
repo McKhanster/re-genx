@@ -12,6 +12,11 @@ body {
   height: 100%;
   overflow: hidden;
   background: #000000;
+  /* Try to load background image, fallback to gradient */
+  background-image: url('/assets/regenx.png'), linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
   /* Optimize for touch devices */
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -34,6 +39,19 @@ button,
   cursor: pointer;
 }
 
+/* Background container behind everything */
+#background-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 /* Three.js canvas fills the screen */
 #bg {
   position: fixed;
@@ -42,6 +60,7 @@ button,
   width: 100%;
   height: 100%;
   display: block;
+  background: transparent; /* Make canvas transparent to show background */
 }
 
 /* Overlay container sitting above the canvas */

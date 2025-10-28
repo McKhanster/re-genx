@@ -1,8 +1,42 @@
 {
+  "settings": {
+    "global": {
+      "genAIKey": {
+        "type": "string",
+        "label": "Gemini API Key",
+        "isSecret": true
+      },
+      "environment": {
+        "type": "select",
+        "label": "Environment",
+        "options": [
+          {
+            "label": "Production",
+            "value": "production"
+          },
+          {
+            "label": "Development",
+            "value": "development"
+          }
+        ],
+        "defaultValue": "production"
+      }
+    },
+    "subreddit": {
+      "welcomeMessage": {
+        "type": "string",
+        "label": "Welcome Message",
+        "validationEndpoint": "/internal/settings/validate-message",
+        "defaultValue": "Welcome to Re-GenX!"
+      }
+    }
+  },
   "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
   "name": "re-genx",
+
   "post": {
     "dir": "dist/client",
+
     "entrypoints": {
       "default": {
         "entry": "index.html"

@@ -16,12 +16,12 @@ export class ForegroundRenderer {
     // _camera parameter kept for API consistency but not stored
     this.isMobile = isMobile;
     this.foregroundGroup = new THREE.Group();
-    
+
     // Disable by default on mobile for performance
     this.enabled = !isMobile;
 
     this.createForegroundShapes();
-    
+
     if (this.enabled) {
       this.scene.add(this.foregroundGroup);
     }
@@ -42,7 +42,7 @@ export class ForegroundRenderer {
       const shape = this.createOrganicShape(i, shapeCount);
       shape.position.y = baseY + Math.random() * 0.5;
       shape.position.x = (i / (shapeCount - 1)) * 6 - 3; // Spread across viewport
-      
+
       this.shapes.push(shape);
       this.foregroundGroup.add(shape);
     }
@@ -54,7 +54,7 @@ export class ForegroundRenderer {
   private createOrganicShape(_index: number, _total: number): THREE.Mesh {
     // Create irregular organic geometry
     const geometry = this.generateOrganicGeometry();
-    
+
     // Create material with dark base and edge highlights
     const material = new THREE.ShaderMaterial({
       uniforms: {
@@ -62,7 +62,7 @@ export class ForegroundRenderer {
         uEdgeColor1: { value: new THREE.Color(0x00ffff) }, // Cyan
         uEdgeColor2: { value: new THREE.Color(0xff00ff) }, // Magenta
         uOpacity: { value: 0.4 },
-        uEdgeWidth: { value: 0.15 }
+        uEdgeWidth: { value: 0.15 },
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -103,14 +103,14 @@ export class ForegroundRenderer {
       `,
       transparent: true,
       depthWrite: false,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
     });
 
     const mesh = new THREE.Mesh(geometry, material);
-    
+
     // Random rotation for variety
     mesh.rotation.z = (Math.random() - 0.5) * 0.3;
-    
+
     // Random scale for variety
     const scale = 0.8 + Math.random() * 0.4;
     mesh.scale.set(scale, scale, scale);
@@ -123,17 +123,17 @@ export class ForegroundRenderer {
    */
   private generateOrganicGeometry(): THREE.BufferGeometry {
     const shape = new THREE.Shape();
-    
+
     // Create irregular organic outline
     const points = 8;
     const radius = 0.5;
-    
+
     for (let i = 0; i <= points; i++) {
       const angle = (i / points) * Math.PI * 2;
       const r = radius * (0.7 + Math.random() * 0.6);
       const x = Math.cos(angle) * r;
       const y = Math.sin(angle) * r;
-      
+
       if (i === 0) {
         shape.moveTo(x, y);
       } else {
@@ -188,13 +188,13 @@ export class ForegroundRenderer {
    * Cleanup resources
    */
   public dispose(): void {
-    this.shapes.forEach(shape => {
+    this.shapes.forEach((shape) => {
       shape.geometry.dispose();
       if (shape.material instanceof THREE.Material) {
         shape.material.dispose();
       }
     });
-    
+
     this.scene.remove(this.foregroundGroup);
     this.shapes = [];
   }

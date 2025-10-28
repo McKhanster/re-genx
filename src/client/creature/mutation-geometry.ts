@@ -45,8 +45,20 @@ export function generateMutationGeometry(
       return generateTentaclesGeometry(mutation.traits, randomnessFactor, isMobile);
     case 'horns':
       return generateHornsGeometry(mutation.traits, randomnessFactor, isMobile);
+
+    // Handle the categories that are actually being generated
+    case 'color':
+      return generateColorGeometry(mutation.traits, randomnessFactor, isMobile);
+    case 'size':
+      return generateSizeGeometry(mutation.traits, randomnessFactor, isMobile);
+    case 'appendage':
+      return generateTentaclesGeometry(mutation.traits, randomnessFactor, isMobile); // Reuse tentacles for appendages
+    case 'pattern':
+      return generatePatternGeometry(mutation.traits, randomnessFactor, isMobile);
+
     default:
       // Default to a simple sphere for unknown types
+      console.warn(`Unknown mutation category: ${primaryTrait.category}, using default geometry`);
       return generateDefaultGeometry(mutation.traits, randomnessFactor, isMobile);
   }
 }
@@ -62,54 +74,26 @@ function generateLegsGeometry(
   const legCountTrait = traits.find((t) => t.category === 'legs');
   const legCount = typeof legCountTrait?.value === 'number' ? legCountTrait.value : 4;
 
-  // Create a group geometry for all legs
-  const group = new THREE.Group();
-  const legRadius = 0.15;
-  const legLength = 1.2;
+  // Create a single leg geometry (simplified for visibility)
+  // Scale based on leg count and randomness
+  const legRadius = 0.2 * (1 + randomnessFactor * 0.5);
+  const legLength = 1.5 * Math.max(1, legCount / 4); // Longer legs for more legs
   const segments = isMobile ? 8 : 16;
 
-  for (let i = 0; i < legCount; i++) {
-    const angle = (i / legCount) * Math.PI * 2;
-    const randomOffset = (Math.random() - 0.5) * 0.3 * randomnessFactor;
+  // Create one prominent leg as a cylinder
+  const legGeometry = new THREE.CylinderGeometry(legRadius, legRadius * 0.7, legLength, segments);
 
-    // Create leg geometry
-    const legGeometry = new THREE.CylinderGeometry(legRadius, legRadius * 0.7, legLength, segments);
-
-    const legMaterial = new THREE.MeshPhongMaterial({
-      color: 0x00ff88,
-      emissive: 0x00ff88,
-      emissiveIntensity: 0.5,
-      shininess: 60,
-    });
-
-    const leg = new THREE.Mesh(legGeometry, legMaterial);
-
-    // Position leg around the creature
-    const distance = 1.2;
-    leg.position.x = Math.cos(angle + randomOffset) * distance;
-    leg.position.z = Math.sin(angle + randomOffset) * distance;
-    leg.position.y = -legLength / 2;
-
-    // Rotate leg outward
-    leg.rotation.z = Math.cos(angle) * 0.3;
-    leg.rotation.x = Math.sin(angle) * 0.3;
-
-    group.add(leg);
-  }
-
-  // Convert group to single geometry (for performance)
-  const mergedGeometry = new THREE.BufferGeometry();
   const material = new THREE.MeshPhongMaterial({
-    color: 0x00ff88,
-    emissive: 0x00ff88,
-    emissiveIntensity: 0.5,
+    color: 0xff4444, // Red for legs
+    emissive: 0x441111,
+    emissiveIntensity: 0.3,
     shininess: 60,
   });
 
   return {
-    geometry: mergedGeometry,
+    geometry: legGeometry,
     material,
-    position: new THREE.Vector3(0, 0, 0),
+    position: new THREE.Vector3(0, -legLength / 2, 1.0), // Position below and in front of creature
     scale: new THREE.Vector3(1, 1, 1),
     rotation: new THREE.Euler(0, 0, 0),
   };
@@ -325,6 +309,153 @@ function generateHornsGeometry(
 }
 
 /**
+ * Generate color mutation geometry
+ */
+function generateColorGeometry(
+  traits: MutationTrait[],
+  randomnessFactor: number,
+  isMobile: boolean
+): MutationGeometry {
+  const segments = isMobile ? 16 : 32;
+  const geometry = new THREE.SphereGeometry(0.2, segments, segments);
+
+  // Get color from trait value and ensure it's a valid color
+  const colorTrait = traits.find((t) => t.category === 'color');
+  let color: string = '#ff0000'; // Default red
+  
+  if (colorTrait?.value && typeof colorTrait.value === 'string') {
+    color = colorTrait.value;
+  } else if (colorTrait?.value && typeof colorTrait.value === 'number') {
+    color = `#${colorTrait.value.toString(16).padStart(6, '0')}`;
+  }
+
+  const material = new THREE.MeshPhongMaterial({
+    color: color,
+    emissive: color,
+    emissiveIntensity: 0.2,
+    transparent: true,
+    opacity: 0.8,
+  });
+
+  return {
+    geometry,
+    material,
+    position: new THREE.Vector3(
+      (Math.random() - 0.5) * 1.2 * randomnessFactor,
+      (Math.random() - 0.5) * 1.2 * randomnessFactor,
+      (Math.random() - 0.5) * 1.2 * randomnessFactor
+    ),
+    scale: new THREE.Vector3(1, 1, 1),
+    rotation: new THREE.Euler(0, 0, 0),
+  };
+}
+
+/**
+ * Generate size mutation geometry
+ */
+function generateSizeGeometry(
+  traits: MutationTrait[],
+  randomnessFactor: number,
+  isMobile: boolean
+): MutationGeometry {
+  const segments = isMobile ? 16 : 32;
+
+  // Get size from trait value
+  const sizeTrait = traits.find((t) => t.category === 'size');
+  const sizeMultiplier = typeof sizeTrait?.value === 'number' ? sizeTrait.value : 1.2;
+
+  const geometry = new THREE.SphereGeometry(0.15 * sizeMultiplier, segments, segments);
+
+  const material = new THREE.MeshPhongMaterial({
+    color: 0xffaa00, // Orange for size mutations
+    emissive: 0x442200,
+    emissiveIntensity: 0.3,
+  });
+
+  return {
+    geometry,
+    material,
+    position: new THREE.Vector3(
+      (Math.random() - 0.5) * 1.0 * randomnessFactor,
+      (Math.random() - 0.5) * 1.0 * randomnessFactor,
+      (Math.random() - 0.5) * 1.0 * randomnessFactor
+    ),
+    scale: new THREE.Vector3(sizeMultiplier, sizeMultiplier, sizeMultiplier),
+    rotation: new THREE.Euler(0, 0, 0),
+  };
+}
+
+/**
+ * Generate appendage mutation geometry
+ */
+function generateAppendageGeometry(
+  traits: MutationTrait[],
+  randomnessFactor: number,
+  isMobile: boolean
+): MutationGeometry {
+  const segments = isMobile ? 8 : 16;
+  const geometry = new THREE.CylinderGeometry(0.05, 0.15, 0.8, segments);
+
+  const material = new THREE.MeshPhongMaterial({
+    color: 0xff4444, // Red for appendages
+    emissive: 0x220000,
+    emissiveIntensity: 0.2,
+  });
+
+  return {
+    geometry,
+    material,
+    position: new THREE.Vector3(
+      (Math.random() - 0.5) * 1.5 * randomnessFactor,
+      0.2,
+      (Math.random() - 0.5) * 1.5 * randomnessFactor
+    ),
+    scale: new THREE.Vector3(1, 1, 1),
+    rotation: new THREE.Euler(
+      Math.random() * 0.5,
+      Math.random() * Math.PI * 2,
+      Math.random() * 0.5
+    ),
+  };
+}
+
+/**
+ * Generate pattern mutation geometry
+ */
+function generatePatternGeometry(
+  traits: MutationTrait[],
+  randomnessFactor: number,
+  isMobile: boolean
+): MutationGeometry {
+  const segments = isMobile ? 12 : 24;
+  const geometry = new THREE.OctahedronGeometry(0.25, 0);
+
+  const material = new THREE.MeshPhongMaterial({
+    color: 0x8844ff, // Purple for patterns
+    emissive: 0x221144,
+    emissiveIntensity: 0.4,
+    transparent: true,
+    opacity: 0.7,
+  });
+
+  return {
+    geometry,
+    material,
+    position: new THREE.Vector3(
+      (Math.random() - 0.5) * 1.3 * randomnessFactor,
+      (Math.random() - 0.5) * 1.3 * randomnessFactor,
+      (Math.random() - 0.5) * 1.3 * randomnessFactor
+    ),
+    scale: new THREE.Vector3(1, 1, 1),
+    rotation: new THREE.Euler(
+      Math.random() * Math.PI,
+      Math.random() * Math.PI,
+      Math.random() * Math.PI
+    ),
+  };
+}
+
+/**
  * Generate default geometry for unknown mutation types
  */
 function generateDefaultGeometry(
@@ -333,26 +464,26 @@ function generateDefaultGeometry(
   isMobile: boolean
 ): MutationGeometry {
   const segments = isMobile ? 16 : 32;
-  // Make default mutations much smaller and less visible
-  const geometry = new THREE.SphereGeometry(0.1, segments, segments);
+  // Create visible default mutations
+  const geometry = new THREE.SphereGeometry(0.3, segments, segments);
 
   const material = new THREE.MeshPhongMaterial({
-    color: 0xaaaaaa,
-    emissive: 0x555555,
-    emissiveIntensity: 0.1,
-    transparent: true,
-    opacity: 0.3, // Make it semi-transparent
+    color: 0x00ff88, // Bright green for visibility
+    emissive: 0x004422,
+    emissiveIntensity: 0.3,
+    transparent: false,
+    opacity: 1.0, // Make it fully opaque
   });
 
   return {
     geometry,
     material,
     position: new THREE.Vector3(
-      (Math.random() - 0.5) * 2,
-      (Math.random() - 0.5) * 2,
-      (Math.random() - 0.5) * 2
+      (Math.random() - 0.5) * 1.5, // Closer to creature center
+      (Math.random() - 0.5) * 1.5,
+      (Math.random() - 0.5) * 1.5
     ),
-    scale: new THREE.Vector3(0.5, 0.5, 0.5), // Make it smaller
+    scale: new THREE.Vector3(1.0, 1.0, 1.0), // Normal size
     rotation: new THREE.Euler(0, 0, 0),
   };
 }
