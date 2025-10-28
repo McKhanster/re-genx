@@ -9,7 +9,7 @@ import { PrivacyDialog } from '../ui/privacy-dialog';
 import { notificationSystem } from '../ui/notification-system';
 import { removalWarning } from '../ui/removal-warning';
 import { apiClient } from '../api/api-client';
-import { soundManager } from '../audio/sound-manager';
+// Sound system removed
 
 /**
  * GameManager handles all game logic and state management
@@ -50,10 +50,7 @@ export class GameManager {
    */
   public async initialize(): Promise<void> {
     try {
-      // Preload sound effects
-      console.log('Preloading sound effects...');
-      await soundManager.preloadSounds();
-      console.log('Sound effects preloaded');
+      // Sound system removed - no preloading needed
       
       // Load or create familiar
       await this.initializeFamiliar();
@@ -370,8 +367,7 @@ export class GameManager {
           notificationSystem.showMutationNotification(mutationType, statChanges);
         }
         
-        // Play mutation sound effect
-        soundManager.playSound('mutation', 0.6);
+        // Sound removed
       }
       
       // Apply new mutations to creature renderer with animation
@@ -387,7 +383,7 @@ export class GameManager {
     // Check for care meter warnings
     if (newState.careMeter < 20 && (!this.currentFamiliarState || this.currentFamiliarState.careMeter >= 20)) {
       notificationSystem.showCareMeterWarning(newState.careMeter);
-      soundManager.playSound('sad', 0.5);
+      // Sound removed
     }
     
     // Check for removal warning (care meter at 0)

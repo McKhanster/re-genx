@@ -45,8 +45,14 @@ export function generateMutationGeometry(
       return generateTentaclesGeometry(mutation.traits, randomnessFactor, isMobile);
     case 'horns':
       return generateHornsGeometry(mutation.traits, randomnessFactor, isMobile);
+    case 'tail':
+      return generateTailGeometry(mutation.traits, randomnessFactor, isMobile);
+    case 'scales':
+      return generateScalesGeometry(mutation.traits, randomnessFactor, isMobile);
+    case 'fur':
+      return generateFurGeometry(mutation.traits, randomnessFactor, isMobile);
 
-    // Handle the categories that are actually being generated
+    // Handle the generic categories
     case 'color':
       return generateColorGeometry(mutation.traits, randomnessFactor, isMobile);
     case 'size':
@@ -55,6 +61,8 @@ export function generateMutationGeometry(
       return generateTentaclesGeometry(mutation.traits, randomnessFactor, isMobile); // Reuse tentacles for appendages
     case 'pattern':
       return generatePatternGeometry(mutation.traits, randomnessFactor, isMobile);
+    case 'texture':
+      return generateTextureGeometry(mutation.traits, randomnessFactor, isMobile);
 
     default:
       // Default to a simple sphere for unknown types
@@ -322,7 +330,7 @@ function generateColorGeometry(
   // Get color from trait value and ensure it's a valid color
   const colorTrait = traits.find((t) => t.category === 'color');
   let color: string = '#ff0000'; // Default red
-  
+
   if (colorTrait?.value && typeof colorTrait.value === 'string') {
     color = colorTrait.value;
   } else if (colorTrait?.value && typeof colorTrait.value === 'number') {
@@ -445,6 +453,166 @@ function generatePatternGeometry(
       (Math.random() - 0.5) * 1.3 * randomnessFactor,
       (Math.random() - 0.5) * 1.3 * randomnessFactor,
       (Math.random() - 0.5) * 1.3 * randomnessFactor
+    ),
+    scale: new THREE.Vector3(1, 1, 1),
+    rotation: new THREE.Euler(
+      Math.random() * Math.PI,
+      Math.random() * Math.PI,
+      Math.random() * Math.PI
+    ),
+  };
+}
+
+/**
+ * Generate tail mutation geometry
+ */
+function generateTailGeometry(
+  _traits: MutationTrait[],
+  randomnessFactor: number,
+  isMobile: boolean
+): MutationGeometry {
+  const tailLength = 1.8;
+  const tailRadius = 0.25;
+  const segments = isMobile ? 8 : 16;
+
+  // Create curved tail using cylinder
+  const geometry = new THREE.CylinderGeometry(tailRadius, tailRadius * 0.3, tailLength, segments);
+
+  // Curve the tail
+  const positionAttribute = geometry.getAttribute('position');
+  for (let i = 0; i < positionAttribute.count; i++) {
+    const y = positionAttribute.getY(i);
+    const normalizedY = (y + tailLength / 2) / tailLength;
+
+    // Create S-curve
+    const curve = Math.sin(normalizedY * Math.PI * 2) * 0.3;
+    positionAttribute.setZ(i, positionAttribute.getZ(i) + curve);
+  }
+  positionAttribute.needsUpdate = true;
+  geometry.computeVertexNormals();
+
+  const material = new THREE.MeshPhongMaterial({
+    color: 0xaa6644,
+    emissive: 0x442211,
+    emissiveIntensity: 0.3,
+  });
+
+  return {
+    geometry,
+    material,
+    position: new THREE.Vector3(0, -0.8, -1.5),
+    scale: new THREE.Vector3(1, 1, 1),
+    rotation: new THREE.Euler(Math.PI / 6, 0, 0),
+  };
+}
+
+/**
+ * Generate scales mutation geometry
+ */
+function generateScalesGeometry(
+  _traits: MutationTrait[],
+  randomnessFactor: number,
+  isMobile: boolean
+): MutationGeometry {
+  const scaleSize = 0.15;
+  const segments = isMobile ? 6 : 12;
+
+  // Create diamond-shaped scale
+  const geometry = new THREE.OctahedronGeometry(scaleSize, 0);
+
+  const material = new THREE.MeshPhongMaterial({
+    color: 0x44aa88,
+    emissive: 0x112244,
+    emissiveIntensity: 0.4,
+    shininess: 100,
+  });
+
+  // Random position on creature surface
+  const angle = Math.random() * Math.PI * 2;
+  const elevation = (Math.random() - 0.5) * Math.PI * 0.8;
+  const distance = 1.2;
+
+  return {
+    geometry,
+    material,
+    position: new THREE.Vector3(
+      Math.cos(angle) * Math.cos(elevation) * distance,
+      Math.sin(elevation) * distance,
+      Math.sin(angle) * Math.cos(elevation) * distance
+    ),
+    scale: new THREE.Vector3(1, 1, 1),
+    rotation: new THREE.Euler(elevation, angle, Math.random() * Math.PI),
+  };
+}
+
+/**
+ * Generate fur mutation geometry
+ */
+function generateFurGeometry(
+  _traits: MutationTrait[],
+  randomnessFactor: number,
+  isMobile: boolean
+): MutationGeometry {
+  const furLength = 0.4;
+  const furRadius = 0.02;
+  const segments = isMobile ? 4 : 8;
+
+  // Create thin cylinder for fur strand
+  const geometry = new THREE.CylinderGeometry(furRadius, furRadius * 0.5, furLength, segments);
+
+  const material = new THREE.MeshPhongMaterial({
+    color: 0x8b4513, // Brown fur
+    emissive: 0x2d1b05,
+    emissiveIntensity: 0.2,
+  });
+
+  // Random position on creature surface
+  const angle = Math.random() * Math.PI * 2;
+  const elevation = (Math.random() - 0.5) * Math.PI * 0.6;
+  const distance = 1.1;
+
+  return {
+    geometry,
+    material,
+    position: new THREE.Vector3(
+      Math.cos(angle) * Math.cos(elevation) * distance,
+      Math.sin(elevation) * distance + furLength / 2,
+      Math.sin(angle) * Math.cos(elevation) * distance
+    ),
+    scale: new THREE.Vector3(1, 1, 1),
+    rotation: new THREE.Euler(elevation, angle, 0),
+  };
+}
+
+/**
+ * Generate texture mutation geometry
+ */
+function generateTextureGeometry(
+  _traits: MutationTrait[],
+  randomnessFactor: number,
+  isMobile: boolean
+): MutationGeometry {
+  const segments = isMobile ? 12 : 24;
+
+  // Create bumpy surface using icosahedron
+  const geometry = new THREE.IcosahedronGeometry(0.2, 1);
+
+  const material = new THREE.MeshPhongMaterial({
+    color: 0x666666,
+    emissive: 0x222222,
+    emissiveIntensity: 0.3,
+    shininess: 30,
+    transparent: true,
+    opacity: 0.8,
+  });
+
+  return {
+    geometry,
+    material,
+    position: new THREE.Vector3(
+      (Math.random() - 0.5) * 1.4 * randomnessFactor,
+      (Math.random() - 0.5) * 1.4 * randomnessFactor,
+      (Math.random() - 0.5) * 1.4 * randomnessFactor
     ),
     scale: new THREE.Vector3(1, 1, 1),
     rotation: new THREE.Euler(

@@ -130,25 +130,6 @@ const halo = new THREE.Mesh(geometry, haloMaterial);
 halo.scale.set(1.2, 1.2, 1.2);
 scene.add(halo);
 
-// Star particles for background
-const starCount = 2000;
-const starGeometry = new THREE.BufferGeometry();
-const starPositions = new Float32Array(starCount * 3);
-for (let i = 0; i < starCount * 3; i++) {
-  starPositions[i] = (Math.random() - 0.5) * 20;
-}
-starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.02 });
-const stars = new THREE.Points(starGeometry, starMaterial);
-scene.add(stars);
-
-// Ground plane for rocky base
-const groundGeometry = new THREE.PlaneGeometry(10, 10, 128, 128);
-const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x111133, side: THREE.DoubleSide });
-const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-ground.rotation.x = -Math.PI / 2;
-ground.position.y = -1.2;
-scene.add(ground);
 
 // Resize handler
 window.addEventListener('resize', () => {

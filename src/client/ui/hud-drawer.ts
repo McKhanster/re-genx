@@ -1,6 +1,6 @@
 import type { CreatureStats, FamiliarStats } from '../../shared/types/api';
 import { StatFeedback } from './stat-feedback';
-import { soundManager } from '../audio/sound-manager';
+// Sound system removed
 
 /**
  * HUDDrawer - Fighter jet style Heads-Up Display
@@ -27,35 +27,41 @@ export class HUDDrawer {
     this.container = document.createElement('div');
     this.container.className = 'hud-drawer';
     this.container.innerHTML = `
-      <!-- Always-visible HUD overlay -->
-      <div class="hud-overlay">
-        <!-- Top Left - Age -->
-        <div class="hud-top-left">
-          <div class="hud-info-item">
-            <span class="hud-info-label">Age</span>
-            <span class="hud-info-value" id="age-value">0</span>
-          </div>
-        </div>
-
-        <!-- Top Right - Next Cycle & Care Meter -->
-        <div class="hud-top-right">
-          <div class="hud-info-item">
-            <span class="hud-info-label">Next Cycle</span>
-            <span class="hud-info-value" id="countdown-value">--:--</span>
-          </div>
-          <div class="hud-info-item" id="care-meter-display">
-            <span class="hud-info-label">Care</span>
-            <span class="hud-info-value" id="care-meter-value">100</span>
-          </div>
-        </div>
-
-        <!-- Bottom Left - Evolution Points -->
+      <!-- App Bar -->
+      <div class="app-bar">
+       <!-- Bottom Left - Evolution Points -->
         <div class="hud-bottom-left">
           <div class="hud-info-item">
             <span class="hud-info-label">EP</span>
             <span class="hud-info-value" id="ep-value">0</span>
           </div>
         </div>
+      <!-- Top Left - Age -->
+        <div class="hud-top-left">
+          <div class="hud-info-item">
+            <span class="hud-info-label">Age</span>
+            <span class="hud-info-value" id="age-value">0</span>
+          </div>
+        </div>
+        <div class="evolve-button-container">
+        <button class="evolve-btn" id="evolve-btn">
+          <span class="evolve-label">Evolve</span>
+          <span class="evolve-cost">5 EP</span>
+        </button>
+      </div>
+        <button class="hud-menu-toggle" id="menu-toggle">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+      </div>
+
+      <!-- Always-visible HUD overlay -->
+      <div class="hud-overlay">
+        
+
+
+       
 
         <!-- Bottom Right - Neglect Warning (hidden by default) -->
         <div class="hud-bottom-right" id="neglect-warning" style="display: none;">
@@ -63,14 +69,18 @@ export class HUDDrawer {
         </div>
       </div>
 
-      <!-- Menu toggle button -->
-      <button class="hud-menu-toggle" id="menu-toggle">
-        ▼ MENU
-      </button>
+
 
       <!-- Slide-down menu panel -->
       <div class="hud-menu-panel" id="menu-panel">
         <div class="hud-menu-content">
+          <!-- AI Activation Section -->
+          <div class="hud-menu-section">
+            <button id="activate-ai-btn" class="care-btn" style="width: 100%; margin-bottom: 20px; background: rgba(0, 255, 136, 0.1); border-color: rgba(0, 255, 136, 0.6);">
+              🤖 Activate AI
+            </button>
+          </div>
+
           <!-- Care Actions Section -->
           <div class="hud-menu-section hud-care-section">
             <div class="hud-menu-section-title">Care Actions</div>
@@ -126,6 +136,18 @@ export class HUDDrawer {
       toggleButton.addEventListener('click', () => this.toggleMenu());
     }
 
+    // Reset familiar button
+    const resetButton = document.getElementById('reset-familiar-btn');
+    if (resetButton) {
+      resetButton.addEventListener('click', () => this.handleResetFamiliar());
+    }
+
+    // Activate AI button
+    const activateAiButton = document.getElementById('activate-ai-btn');
+    if (activateAiButton) {
+      activateAiButton.addEventListener('click', () => this.handleActivateAI());
+    }
+
     // Prevent menu interactions from affecting the 3D scene
     if (this.menuPanel) {
       this.menuPanel.addEventListener('touchstart', (e: Event) => {
@@ -155,16 +177,16 @@ export class HUDDrawer {
   public toggleMenu(): void {
     this.menuVisible = !this.menuVisible;
     
-    // Play click sound
-    soundManager.playSound('click', 0.5);
+    // Sound removed
     
     if (this.menuPanel) {
       this.menuPanel.classList.toggle('visible', this.menuVisible);
     }
 
+    // Update hamburger button animation
     const toggleButton = document.getElementById('menu-toggle');
     if (toggleButton) {
-      toggleButton.textContent = this.menuVisible ? '▲ CLOSE' : '▼ MENU';
+      toggleButton.classList.toggle('active', this.menuVisible);
     }
   }
 
@@ -368,6 +390,103 @@ export class HUDDrawer {
     // Show floating stat changes if there are any
     if (Object.keys(allChanges).length > 0) {
       StatFeedback.showMultipleStatChanges(allChanges);
+    }
+  }
+
+  /**
+   * Handles the activate AI button click
+   */
+  private async handleActivateAI(): Promise<void> {
+    try {
+      // Disable the button during the request
+      const activateButton = document.getElementById('activate-ai-btn') as HTMLButtonElement;
+      if (activateButton) {
+        activateButton.disabled = true;
+        activateButton.textContent = '🤖 Activating AI...';
+      }
+
+      const response = await fetch('/api/gemini/initialize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        let message = result.message || 'AI services activated successfully!';
+        if (result.details?.servicesActivated) {
+          const services = result.details.servicesActivated;
+          message += `\n\nServices activated:\n• Mutation Processor: ${services.mutationProcessor ? '✅' : '❌'}\n• Personality Service: ${services.personalityService ? '✅' : '❌'}`;
+        }
+        alert(message);
+        
+        // Update button to show activated state
+        if (activateButton) {
+          activateButton.textContent = '✅ AI Activated';
+          activateButton.style.background = 'rgba(0, 255, 136, 0.2)';
+        }
+      } else {
+        let errorMessage = result.error || 'Failed to activate AI services';
+        if (result.details?.errorType === 'PERMISSION_DENIED') {
+          errorMessage += '\n\nThis usually means:\n• API key is invalid or expired\n• API key lacks Gemini API permissions\n• API key is restricted for this project';
+        }
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      console.error('Error activating AI:', error);
+      alert(`Failed to activate AI: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Re-enable the button
+      const activateButton = document.getElementById('activate-ai-btn') as HTMLButtonElement;
+      if (activateButton) {
+        activateButton.disabled = false;
+        activateButton.textContent = '🤖 Activate AI';
+      }
+    }
+  }
+
+  /**
+   * Handles the reset familiar button click
+   */
+  private async handleResetFamiliar(): Promise<void> {
+
+
+    try {
+      // Disable the button during the request
+      const resetButton = document.getElementById('reset-familiar-btn') as HTMLButtonElement;
+      if (resetButton) {
+        resetButton.disabled = true;
+        resetButton.textContent = '🔄 Resetting...';
+      }
+
+      const response = await fetch('/api/familiar/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        alert(`Reset successful!\n\n${result.message}\n\nThe page will now reload.`);
+        // Reload the page to refresh all data
+        window.location.reload();
+      } else {
+        throw new Error(result.error || 'Reset failed');
+      }
+    } catch (error) {
+      console.error('Error resetting familiar:', error);
+      alert(`Failed to reset familiar: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Re-enable the button
+      const resetButton = document.getElementById('reset-familiar-btn') as HTMLButtonElement;
+      if (resetButton) {
+        resetButton.disabled = false;
+        resetButton.textContent = '🔄 Reset Familiar';
+      }
     }
   }
 

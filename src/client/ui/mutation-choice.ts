@@ -1,5 +1,5 @@
 import type { MutationTraitOption, MutationTriggerResponse } from '../../shared/types/api';
-import { soundManager } from '../audio/sound-manager';
+// Sound system removed
 
 /**
  * MutationChoiceUI - Handles controlled mutation interface
@@ -33,13 +33,7 @@ export class MutationChoiceUI {
     this.container.className = 'mutation-choice-ui';
     this.container.innerHTML = `
       <!-- Evolve Button (always visible) -->
-      <div class="evolve-button-container">
-        <button class="evolve-btn" id="evolve-btn">
-          <span class="evolve-icon">⚡</span>
-          <span class="evolve-label">Evolve</span>
-          <span class="evolve-cost">5 EP</span>
-        </button>
-      </div>
+      
 
       <!-- Trait Options Panel (hidden by default) -->
       <div class="trait-options-panel" id="trait-options-panel">
@@ -137,8 +131,7 @@ export class MutationChoiceUI {
       return;
     }
 
-    // Play click sound
-    soundManager.playSound('click', 0.5);
+    // Sound removed
 
     try {
       // Show loading state
@@ -146,7 +139,6 @@ export class MutationChoiceUI {
         this.evolveButton.disabled = true;
         this.evolveButton.classList.add('loading');
         this.evolveButton.innerHTML = `
-          <span class="evolve-icon loading-spinner-small"></span>
           <span class="evolve-label">Generating...</span>
         `;
       }
@@ -169,9 +161,8 @@ export class MutationChoiceUI {
         this.evolveButton.disabled = false;
         this.evolveButton.classList.remove('loading');
         const icon = '<span class="evolve-icon">⚡</span>';
-        const label = '<span class="evolve-label">Evolve</span>';
         const cost = '<span class="evolve-cost">5 EP</span>';
-        this.evolveButton.innerHTML = icon + label + cost;
+        this.evolveButton.innerHTML = icon + cost;
       }
     }
   }
@@ -292,8 +283,7 @@ export class MutationChoiceUI {
       return;
     }
 
-    // Play click sound
-    soundManager.playSound('click', 0.5);
+    // Sound removed
 
     try {
       // Show loading state on the entire panel
@@ -331,10 +321,9 @@ export class MutationChoiceUI {
       if (this.evolveButton) {
         this.evolveButton.disabled = false;
         this.evolveButton.classList.remove('loading');
-        const icon = '<span class="evolve-icon">⚡</span>';
         const label = '<span class="evolve-label">Evolve</span>';
         const cost = '<span class="evolve-cost">5 EP</span>';
-        this.evolveButton.innerHTML = icon + label + cost;
+        this.evolveButton.innerHTML = label + cost;
       }
     } catch (error) {
       console.error('Failed to apply mutation:', error);
@@ -371,10 +360,10 @@ export class MutationChoiceUI {
     // Re-enable evolve button
     if (this.evolveButton) {
       this.evolveButton.disabled = false;
-      const icon = '<span class="evolve-icon">⚡</span>';
+
       const label = '<span class="evolve-label">Evolve</span>';
       const cost = '<span class="evolve-cost">5 EP</span>';
-      this.evolveButton.innerHTML = icon + label + cost;
+      this.evolveButton.innerHTML = label + cost;
     }
   }
 

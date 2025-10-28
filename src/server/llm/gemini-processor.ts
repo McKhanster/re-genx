@@ -1,5 +1,6 @@
 import {GoogleGenAI} from '@google/genai';
 import { FamiliarStats, MutationData, BiomeType, StatEffects } from '../../shared/types/api.js';
+import { ORIGIN_PROMPT } from './prompt-constants.js';
 // ============================================================================
 // Types for LLM Processing
 // ============================================================================
@@ -88,34 +89,78 @@ export class GeminiProcessor {
   async generateMutationOptions(context: MutationContext): Promise<MutationOption[]> {
     const prompt = this.buildMutationPrompt(context);
 
+    console.log('[GeminiProcessor] MUTATION REQUEST:', {
+      timestamp: new Date().toISOString(),
+      context: {
+        stats: context.stats,
+        mutations: context.mutations,
+        biome: context.biome,
+        activityCategory: context.activityCategory,
+        eventType: context
+      },
+      prompt: prompt
+    });
+
     try {
+      const requestPayload = {
+        model: 'gemini-2.0-flash-001',
+        contents: prompt,
+      };
+
+      console.log('[GeminiProcessor] API REQUEST PAYLOAD:', requestPayload);
+
       const result = await Promise.race([
-        this.model.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-        }),
+        this.model.generateContent(requestPayload),
         this.timeout(25000)
       ]);
 
-      const response = await result.response;
-      const text = response.text();
+      console.log('[GeminiProcessor] RAW API RESPONSE:', result);
+
+      // Extract text from the response structure
+      let text = '';
+      if (result?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        text = result.candidates[0].content.parts[0].text;
+      } else {
+        throw new Error('No text content in Gemini response');
+      }
+
+      console.log('[GeminiProcessor] EXTRACTED TEXT RESPONSE:', text);
       
       // Parse JSON from response
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
+        console.error('[GeminiProcessor] NO JSON FOUND IN RESPONSE:', text);
         throw new Error('No valid JSON in response');
       }
 
+      console.log('[GeminiProcessor] EXTRACTED JSON:', jsonMatch[0]);
+
       const parsedOptions = JSON.parse(jsonMatch[0]);
+      console.log('[GeminiProcessor] PARSED OPTIONS:', parsedOptions);
       
       // Validate each mutation option has required fields
       const validatedOptions = parsedOptions.filter((option: any) => {
-        return this.validateMutationOption(option);
+        const isValid = this.validateMutationOption(option);
+        if (!isValid) {
+          console.warn('[GeminiProcessor] INVALID OPTION FILTERED OUT:', option);
+        }
+        return isValid;
       });
 
       if (validatedOptions.length === 0) {
+        console.error('[GeminiProcessor] NO VALID OPTIONS AFTER VALIDATION:', {
+          originalCount: parsedOptions.length,
+          originalOptions: parsedOptions
+        });
         throw new Error('No valid mutation options in response');
       }
+
+      console.log('[GeminiProcessor] FINAL VALIDATED OPTIONS:', {
+        timestamp: new Date().toISOString(),
+        totalGenerated: parsedOptions.length,
+        validatedCount: validatedOptions.length,
+        options: validatedOptions
+      });
 
       return validatedOptions;
     } catch (error) {
@@ -127,27 +172,66 @@ export class GeminiProcessor {
   async generatePersonalityResponse(context: PersonalityContext): Promise<PersonalityResponse> {
     const prompt = this.buildPersonalityPrompt(context);
 
+    console.log('[GeminiProcessor] PERSONALITY REQUEST:', {
+      timestamp: new Date().toISOString(),
+      context: {
+        eventType: context.eventType,
+        eventContext: context.eventContext,
+        stats: context.stats,
+        mutations: context.mutations,
+        biome: context.biome,
+        activityCategory: context.activityCategory
+      },
+      prompt: prompt
+    });
+
     try {
+      const requestPayload = {
+        model: 'gemini-2.0-flash-001',
+        contents: prompt,
+      };
+
+      console.log('[GeminiProcessor] PERSONALITY API REQUEST PAYLOAD:', requestPayload);
+
       const result = await Promise.race([
-        this.model.generateContent(prompt),
+        this.model.generateContent(requestPayload),
         this.timeout(25000)
       ]);
 
-      const response = await result.response;
-      const text = response.text();
+      console.log('[GeminiProcessor] PERSONALITY RAW API RESPONSE:', result);
+
+      // Extract text from the response structure
+      let text = '';
+      if (result?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        text = result.candidates[0].content.parts[0].text;
+      } else {
+        throw new Error('No text content in Gemini response');
+      }
+
+      console.log('[GeminiProcessor] PERSONALITY EXTRACTED TEXT RESPONSE:', text);
       
       // Parse JSON from response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
+        console.error('[GeminiProcessor] NO JSON FOUND IN PERSONALITY RESPONSE:', text);
         throw new Error('No valid JSON in personality response');
       }
 
+      console.log('[GeminiProcessor] PERSONALITY EXTRACTED JSON:', jsonMatch[0]);
+
       const parsedPersonality = JSON.parse(jsonMatch[0]);
+      console.log('[GeminiProcessor] PERSONALITY PARSED RESPONSE:', parsedPersonality);
       
       // Validate personality response
       if (!this.validatePersonalityResponse(parsedPersonality)) {
+        console.error('[GeminiProcessor] INVALID PERSONALITY RESPONSE:', parsedPersonality);
         throw new Error('Invalid personality response structure');
       }
+
+      console.log('[GeminiProcessor] FINAL PERSONALITY RESPONSE:', {
+        timestamp: new Date().toISOString(),
+        response: parsedPersonality
+      });
 
       return parsedPersonality;
     } catch (error) {
@@ -229,7 +313,7 @@ export class GeminiProcessor {
   }
 
   private buildMutationPrompt(context: MutationContext): string {
-    return `You are a Three.js creature evolution designer for Re-GenX. Generate 3-5 unique mutation options with complete geometry, materials, and animations.
+    return  ORIGIN_PROMPT + ` You are a Three.js creature evolution designer for Re-GenX. Generate 3-5 unique mutation options with complete geometry, materials, and animations.
 
 Current Creature State:
 - Stats: ${JSON.stringify(context.stats)}
@@ -252,22 +336,13 @@ Material Guidelines:
 - Transparent materials need opacity < 1.0
 - Colors in hex format (#rrggbb)
 
-Animation Guidelines:
-- Duration: 2000-3000ms for mutation appearance
-- Use 'elastic' easing for organic growth
-- Use 'easeOut' for mechanical additions
-- Keyframes for complex animations (0.0 = start, 1.0 = end)
-
 Scene Graph:
 - parent: null for root-level mutations
 - parent: "creature_body" to attach to creature
 - children: array of nested mutations (e.g., leg with foot)
 
-Stat Balance:
-- Total stat delta must be ≤ 0 (more negatives than positives)
-- Larger/heavier mutations reduce mobility
-- Defensive mutations reduce speed
-- Offensive mutations reduce defense
+
+Valid categories (prefer specific creature parts): legs, eyes, wings, horns, tentacles, spikes, scales, fur, tail, color, size, appendage, pattern, texture
 
 Output ONLY a JSON array with complete MutationOption objects:
 [
@@ -275,7 +350,7 @@ Output ONLY a JSON array with complete MutationOption objects:
     "id": "mutation_cyber_tentacles_001",
     "label": "Cyber Tentacles",
     "description": "Glowing tech-infused tentacles that pulse with energy, complementing your existing ${context.mutations[0]?.traits[0]?.category || 'form'}",
-    "category": "appendage",
+    "category": "tentacles",
     "geometry": {
       "type": "cylinder",
       "dimensions": {
@@ -315,7 +390,21 @@ Output ONLY a JSON array with complete MutationOption objects:
   }
 ]
 
-Generate ${context.activityCategory ? `mutations themed around ${context.activityCategory}` : 'creative, unique mutations'}. Be specific with geometry dimensions and materials.`;
+Generate ${context.activityCategory ? `mutations themed around ${context.activityCategory}` : 'creative, unique mutations'}. 
+
+IMPORTANT: Prefer specific creature parts (legs, eyes, wings, horns, tentacles, spikes, tail, scales, fur) over generic categories (appendage, pattern, color, size). These create much more interesting visual mutations!
+
+Examples of good categories:
+- "legs" for additional limbs, spider legs, insect legs
+- "eyes" for extra eyes, compound eyes, glowing eyes  
+- "wings" for bat wings, insect wings, feathered wings
+- "horns" for antlers, spikes, curved horns
+- "tentacles" for octopus arms, whips, grabbers
+- "tail" for lizard tails, scorpion tails, fluffy tails
+- "scales" for armor plating, fish scales, dragon scales
+- "fur" for hair, bristles, soft coating
+
+Be specific with geometry dimensions and materials.`;
   }
 
   private buildPersonalityPrompt(context: PersonalityContext): string {
@@ -335,7 +424,7 @@ Generate ${context.activityCategory ? `mutations themed around ${context.activit
     const dominantStats = this.getDominantStats(stats);
     const recentMutations = mutations.slice(-2).map(m => m.traits.map(t => t.category).join(', ')).join('; ');
 
-    return `You are the consciousness of a Re-GenX creature. Generate a personality response based on the current situation.
+    return ORIGIN_PROMPT + ` You are the consciousness of a Re-GenX creature. Generate a personality response based on the current situation.
 
 Current Situation:
 ${contextDescription}

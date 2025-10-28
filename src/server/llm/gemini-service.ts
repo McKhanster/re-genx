@@ -1,6 +1,6 @@
-import {GoogleGenAI} from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import type { FamiliarStats } from '../../shared/types/api';
-
+import { ORIGIN_PROMPT } from './prompt-constants';
 // ============================================================================
 // Types for Gemini Service
 // ============================================================================
@@ -36,18 +36,12 @@ export class GeminiService {
   private model: any;
 
   constructor(apiKey: string) {
-    this.genAI = new GoogleGenAI({apiKey: apiKey});
-    this.model = this.genAI.models.generateContent({ 
-      model: 'gemini-2.5-flash',
-      contents: this.getSystemInstructions(),
-      config: {
-        systemInstruction: this.getSystemInstructions()
-      }
-    });
+    this.genAI = new GoogleGenAI({ apiKey: apiKey });
+    this.model = this.genAI.models;
   }
 
   private getSystemInstructions(): string {
-    return `You are the brain of a digital creature in Re-GenX, a creature evolution game on Reddit. 
+    return ORIGIN_PROMPT + ` You are the brain of a digital creature in Re-GenX. 
 
 Your role is to generate personality responses that make the creature feel alive and responsive to player interactions. You should:
 
@@ -75,50 +69,132 @@ Always respond with valid JSON matching the CreaturePersonality schema.`;
   async generatePersonality(context: CreatureContext): Promise<CreaturePersonality | null> {
     try {
       const prompt = this.buildPersonalityPrompt(context);
-      
-      console.log(`[GeminiService] Generating personality for creature ${context.creatureId}, event: ${context.eventType}`);
-      
+
+      console.log('[GeminiService] PERSONALITY REQUEST:', {
+        timestamp: new Date().toISOString(),
+        creatureId: context.creatureId,
+        context: {
+          age: context.age,
+          stats: context.stats,
+          eventType: context.eventType,
+          eventContext: context.eventContext,
+        },
+        prompt: prompt,
+        systemInstructions: this.getSystemInstructions()
+      });
+
+      const requestPayload = {
+        model: 'gemini-2.0-flash-001',
+        contents: prompt,
+        systemInstruction: this.getSystemInstructions(),
+      };
+
+      console.log('[GeminiService] API REQUEST PAYLOAD:', requestPayload);
+
       // Use Promise.race for 25-second timeout as specified in requirements
       const result = await Promise.race([
-        this.model.generateContent(prompt),
-        this.timeout(25000)
+        this.model.generateContent(requestPayload),
+        this.timeout(25000),
       ]);
 
-      const response = await result.response;
-      const text = response.text();
-      
-      console.log(`[GeminiService] Received response for creature ${context.creatureId}:`, text.substring(0, 200) + '...');
-      
+      console.log('[GeminiService] RAW API RESPONSE:', result);
+
+      // Extract text from the response structure
+      let text = '';
+      if (result?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        text = result.candidates[0].content.parts[0].text;
+      } else {
+        throw new Error('No text content in Gemini response');
+      }
+
+      console.log('[GeminiService] EXTRACTED TEXT RESPONSE:', text);
+
       // Parse response text to extract JSON personality data
+      console.log('[GeminiService] PARSING PERSONALITY RESPONSE...');
       const personalityData = this.parsePersonalityResponse(text);
-      
+      console.log('[GeminiService] PARSED PERSONALITY DATA:', personalityData);
+
       if (personalityData) {
         // Validate the response before returning
+        console.log('[GeminiService] VALIDATING PERSONALITY RESPONSE...');
         const validatedPersonality = this.validatePersonalityResponse(personalityData);
+        console.log('[GeminiService] VALIDATION RESULT:', validatedPersonality);
+        
         if (validatedPersonality) {
-          console.log(`[GeminiService] Successfully generated personality for creature ${context.creatureId}`);
+          console.log('[GeminiService] FINAL PERSONALITY RESPONSE:', {
+            timestamp: new Date().toISOString(),
+            creatureId: context.creatureId,
+            success: true,
+            personality: validatedPersonality
+          });
           return validatedPersonality;
+        } else {
+          console.error('[GeminiService] PERSONALITY VALIDATION FAILED:', {
+            timestamp: new Date().toISOString(),
+            creatureId: context.creatureId,
+            rawData: personalityData,
+            validationResult: validatedPersonality
+          });
         }
+      } else {
+        console.error('[GeminiService] PERSONALITY PARSING FAILED:', {
+          timestamp: new Date().toISOString(),
+          creatureId: context.creatureId,
+          rawText: text
+        });
       }
-      
-      console.warn(`[GeminiService] Failed to parse/validate personality response for creature ${context.creatureId}`);
+
+      console.warn('[GeminiService] PERSONALITY GENERATION FAILED:', {
+        timestamp: new Date().toISOString(),
+        creatureId: context.creatureId,
+        reason: 'Failed to parse or validate personality response'
+      });
       return null;
     } catch (error) {
       // Handle different types of errors with detailed logging
+      console.error('[GeminiService] PERSONALITY GENERATION ERROR:', {
+        timestamp: new Date().toISOString(),
+        creatureId: context.creatureId,
+        error: error instanceof Error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        } : error,
+        context: {
+          age: context.age,
+          eventType: context.eventType,
+        }
+      });
+
       if (error instanceof Error) {
         if (error.message.includes('timeout')) {
-          console.error(`[GeminiService] Timeout error for creature ${context.creatureId}:`, error.message);
+          console.error('[GeminiService] TIMEOUT ERROR:', {
+            creatureId: context.creatureId,
+            message: error.message
+          });
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
-          console.error(`[GeminiService] Network error for creature ${context.creatureId}:`, error.message);
+          console.error('[GeminiService] NETWORK ERROR:', {
+            creatureId: context.creatureId,
+            message: error.message
+          });
         } else if (error.message.includes('API')) {
-          console.error(`[GeminiService] API error for creature ${context.creatureId}:`, error.message);
+          console.error('[GeminiService] API ERROR:', 
+       
+            error.message
+          );
         } else {
-          console.error(`[GeminiService] Unknown error for creature ${context.creatureId}:`, error.message);
+          console.error(
+            `[GeminiService] Unknown error for creature ${context.creatureId}:`,
+            error.message
+          );
         }
       } else {
-        console.error(`[GeminiService] Unexpected error type for creature ${context.creatureId}:`, error);
+        console.error(
+          `[GeminiService] Unexpected error type for creature ${context.creatureId}:`,
+          error
+        );
       }
-      
+
       return null; // Return null to trigger fallback personality system
     }
   }
@@ -163,9 +239,11 @@ Always respond with valid JSON matching the CreaturePersonality schema.`;
    */
   private buildPersonalityPrompt(context: CreatureContext): string {
     const intelligenceLevel = this.getIntelligenceLevel(context.stats.cognition.intelligence);
-    const themeContext = context.subredditTheme ? `\n- Subreddit Theme: ${context.subredditTheme} (incorporate thematic elements)` : '';
-    
-    return `Generate a personality response for a digital creature based on the following context:
+    const themeContext = context.subredditTheme
+      ? `\n- Subreddit Theme: ${context.subredditTheme} (incorporate thematic elements)`
+      : '';
+
+    return  ORIGIN_PROMPT + ` You are the game master for an online game called Re-Genex, Generate a personality response for a digital creature based on the following context:
 
 CREATURE STATE:
 - Age: ${context.age} hours old
@@ -253,7 +331,16 @@ Generate the personality response now:`;
       }
 
       // Validate mood field
-      const validMoods = ['playful', 'sleepy', 'curious', 'content', 'energetic', 'lonely', 'excited', 'calm'];
+      const validMoods = [
+        'playful',
+        'sleepy',
+        'curious',
+        'content',
+        'energetic',
+        'lonely',
+        'excited',
+        'calm',
+      ];
       if (!data.mood || !validMoods.includes(data.mood)) {
         console.error('[GeminiService] Response validation failed: invalid mood:', data.mood);
         return null;
@@ -274,13 +361,22 @@ Generate the personality response now:`;
       // Validate movement field
       const validMovements = ['still', 'wiggling', 'pulsing', 'dancing', 'exploring'];
       if (!data.movement || !validMovements.includes(data.movement)) {
-        console.error('[GeminiService] Response validation failed: invalid movement:', data.movement);
+        console.error(
+          '[GeminiService] Response validation failed: invalid movement:',
+          data.movement
+        );
         return null;
       }
 
       // Validate optional memory_formed field
-      if (data.memory_formed !== undefined && (typeof data.memory_formed !== 'string' || data.memory_formed.trim().length === 0)) {
-        console.error('[GeminiService] Response validation failed: invalid memory_formed:', data.memory_formed);
+      if (
+        data.memory_formed !== undefined &&
+        (typeof data.memory_formed !== 'string' || data.memory_formed.trim().length === 0)
+      ) {
+        console.error(
+          '[GeminiService] Response validation failed: invalid memory_formed:',
+          data.memory_formed
+        );
         return null;
       }
 
@@ -290,12 +386,11 @@ Generate the personality response now:`;
         energy: Math.round(data.energy), // Ensure integer
         sound: data.sound.trim(),
         movement: data.movement,
-        memory_formed: data.memory_formed ? data.memory_formed.trim() : undefined
+        memory_formed: data.memory_formed ? data.memory_formed.trim() : undefined,
       };
 
       console.log('[GeminiService] Response validation successful');
       return validatedPersonality;
-
     } catch (error) {
       console.error('[GeminiService] Response validation error:', error);
       return null;

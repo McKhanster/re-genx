@@ -21,8 +21,6 @@ export const createPost = async () => {
       appDisplayName: 'Re-GenX', // only required field
       backgroundUri: backgroundUri,
       buttonLabel: 'Start Playing',
-      description:
-        'Nurture your own evolving familiar. Feed, play, and watch it grow into something unique.',
       heading: 'Your Familiar Awaits',
     },
     postData: {

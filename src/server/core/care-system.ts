@@ -90,6 +90,14 @@ export class CareSystem {
         undefined
       );
 
+      // Trigger personality response for the care action
+      try {
+        await this.triggerPersonalityResponse(userId, action);
+      } catch (error) {
+        console.warn('Failed to generate personality response for care action:', error);
+        // Don't fail the care action if personality generation fails
+      }
+
       return {
         careMeter,
         evolutionPoints,
@@ -189,6 +197,55 @@ export class CareSystem {
         return { careMeterIncrease: 5, evolutionPointsGained: 5 };
       default:
         return { careMeterIncrease: 0, evolutionPointsGained: 0 };
+    }
+  }
+
+  /**
+   * Trigger personality response for care action
+   * @param userId - User ID
+   * @param action - Care action performed
+   */
+  private async triggerPersonalityResponse(userId: string, action: string): Promise<void> {
+    try {
+      console.log(`[CareSystem] Triggering personality response for ${action} by ${userId}`);
+      
+      // Import Gemini service directly
+      const { GeminiService } = await import('../llm/gemini-service.js');
+      const { settings } = await import('@devvit/web/server');
+      
+      const genAIKey = await settings.get('genAIKey');
+      if (!genAIKey || typeof genAIKey !== 'string') {
+        console.warn('[CareSystem] Gemini API key not available for personality response');
+        return;
+      }
+      
+      const service = new GeminiService(genAIKey);
+
+      // Get familiar data for proper context
+      const familiarId = this.getFamiliarKey(userId);
+      const familiarData = await this.safeRedisOperation(() => this.redis.hGetAll(familiarId), {});
+      
+      // Build context for personality generation with proper stats
+      const context = {
+        creatureId: familiarId,
+        age: parseInt(familiarData.age || '50'),
+        stats: JSON.parse(familiarData.stats || '{"mobility":{"speed":50,"agility":50,"endurance":50},"senses":{"vision":50,"hearing":50,"smell":50},"survival":{"attack":50,"defense":50,"stealth":50},"cognition":{"intelligence":50,"social":50,"adaptability":50},"vitals":{"health":100,"happiness":75,"energy":75}}'),
+        eventType: action,
+        eventContext: { careAction: action },
+        biome: familiarData.biome || 'jungle',
+        activityCategory: familiarData.activityCategory
+      };
+
+      console.log('[CareSystem] Generating personality response with context:', context);
+      const personality = await service.generatePersonality(context);
+      
+      if (personality) {
+        console.log(`[CareSystem] Personality response generated for ${action}:`, personality);
+      } else {
+        console.warn(`[CareSystem] No personality response generated for ${action}`);
+      }
+    } catch (error) {
+      console.error(`[CareSystem] Error triggering personality response:`, error);
     }
   }
 

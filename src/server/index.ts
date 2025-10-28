@@ -114,14 +114,8 @@ import { settings } from '@devvit/web/server';
 
     try {
       const genAIKey: any = await settings.get('genAIKey');
-      console.log(
-        '[Server] Checking for genAIKey...=============================================================',
-        genAIKey
-      );
+
       if (genAIKey && typeof genAIKey === 'string') {
-        console.log(
-          '[Server] Initializing Gemini services.------------------------------------------------------..'
-        );
         geminiProcessor = new GeminiProcessor(genAIKey);
         geminiService = new GeminiService(genAIKey);
         console.log('[Server] Gemini services initialized successfully');
@@ -334,30 +328,74 @@ import { settings } from '@devvit/web/server';
   );
 
   /**
-   * Debug endpoint: Reset familiar mutations
-   * Clears all mutations and resets evolution points
+   * Debug endpoint: Reset familiar and clear all user data
+   * Completely clears all Redis data associated with the user
    */
-  router.post<unknown, { success: boolean; message: string } | ErrorResponse>(
-    '/api/familiar/reset',
-    async (_req, res): Promise<void> => {
-      try {
-        const username = await getUsernameWithFallback();
-        const validatedUsername = validateUsername(username);
-        const familiarId = `familiar:${validatedUsername}`;
+  router.post<
+    unknown,
+    { success: boolean; message: string; clearedKeys: string[] } | ErrorResponse
+  >('/api/familiar/reset', async (_req, res): Promise<void> => {
+    try {
+      const username = await getUsernameWithFallback();
+      const validatedUsername = validateUsername(username);
 
-        // Clear mutations only, keep other data
-        await redis.hSet(familiarId, {
-          mutations: JSON.stringify([]),
-          evolutionPoints: '0',
-        });
+      // Define all possible Redis keys for this user
+      const keysToDelete = [
+        `familiar:${validatedUsername}`,
+        `familiar:archived:${validatedUsername}`,
+        `activity:${validatedUsername}`,
+        `behavior:${validatedUsername}`,
+        `creature:${validatedUsername}:personality`,
+        `creature:personality:${validatedUsername}`,
+        `privacy:consent:${validatedUsername}`,
+        `cooldown:${validatedUsername}:feed`,
+        `cooldown:${validatedUsername}:play`,
+        `cooldown:${validatedUsername}:attention`,
+        `user:${validatedUsername}:group`,
+      ];
 
-        res.json({ success: true, message: 'Familiar reset successfully' });
-      } catch (error) {
-        console.error('Error resetting familiar:', error);
-        res.status(500).json({ error: 'Failed to reset familiar' });
+      // Clear all user-related keys
+      const clearedKeys: string[] = [];
+      for (const key of keysToDelete) {
+        try {
+          await redis.del(key);
+          clearedKeys.push(key);
+        } catch (error) {
+          console.warn(`Failed to delete key ${key}:`, error);
+        }
       }
+
+      // Also clear known mutation cache keys for this user
+      const cacheKeysToTry = [
+        `mutation:cache:${validatedUsername}:recent`,
+        `mutation:cache:${validatedUsername}:options`,
+        `mutation:cache:${validatedUsername}:session`,
+      ];
+
+      for (const key of cacheKeysToTry) {
+        try {
+          await redis.del(key);
+          clearedKeys.push(key);
+        } catch (error) {
+          console.warn(`Failed to delete cache key ${key}:`, error);
+        }
+      }
+
+      console.log(
+        `Reset familiar for ${validatedUsername}, cleared ${clearedKeys.length} keys:`,
+        clearedKeys
+      );
+
+      res.json({
+        success: true,
+        message: `Familiar and all user data reset successfully. Cleared ${clearedKeys.length} Redis keys.`,
+        clearedKeys,
+      });
+    } catch (error) {
+      console.error('Error resetting familiar:', error);
+      res.status(500).json({ error: 'Failed to reset familiar and clear user data' });
     }
-  );
+  });
 
   // ============================================================================
   // Care Action API Endpoints
@@ -1173,6 +1211,50 @@ import { settings } from '@devvit/web/server';
   });
 
   // ============================================================================
+  // Gemini AI Initialization Endpoint
+  // ============================================================================
+
+  /**
+   * Initialize Gemini AI services
+   * Manually triggers initialization of Gemini processor and service and tests API connectivity
+   */
+  router.post<unknown, { success: boolean; message: string; details?: any } | ErrorResponse>(
+    '/api/gemini/initialize',
+    async (_req, res): Promise<void> => {
+      try {
+        console.log('[API] Manual Gemini initialization requested');
+
+        // Initialize the Gemini services for production use
+        console.log('[API] Activating Gemini services for production...');
+        const { processor, service } = await initializeGeminiServices();
+
+        if (processor && service) {
+          console.log('[API] Gemini services activated successfully - ready for production use');
+          res.json({
+            success: true,
+            message: 'Gemini AI services activated successfully! The AI can now generate mutations and personality responses.',
+            details: {
+              servicesActivated: {
+                mutationProcessor: !!processor,
+                personalityService: !!service,
+              },
+            },
+          });
+        } else {
+          res.status(503).json({
+            error: 'Failed to initialize Gemini services. Please check your API key configuration.',
+          });
+        }
+      } catch (error) {
+        console.error('Error in Gemini initialization:', error);
+        res.status(500).json({
+          error: 'Failed to initialize Gemini AI services',
+        });
+      }
+    }
+  );
+
+  // ============================================================================
   // Debug/Test Endpoints
   // ============================================================================
 
@@ -1375,18 +1457,18 @@ import { settings } from '@devvit/web/server';
   router.post('/api/test/clear-redis', async (_req, res): Promise<void> => {
     try {
       console.log('[TEST] Clearing Redis data...');
-      
+
       // Get username for user-specific data
       const username = await getUsernameWithFallback();
-      
+
       // Clear familiar data
       const familiarKey = `familiar:${username}`;
       await redis.del(familiarKey);
-      
+
       // Clear privacy consent
       const consentKey = `privacy:consent:${username}`;
       await redis.del(consentKey);
-      
+
       // Clear other common keys (without using keys() method)
       const keysToTry = [
         `mutation:cache:${username}`,
@@ -1395,9 +1477,9 @@ import { settings } from '@devvit/web/server';
         `behavior:${username}`,
         `cooldown:${username}:feed`,
         `cooldown:${username}:play`,
-        `cooldown:${username}:attention`
+        `cooldown:${username}:attention`,
       ];
-      
+
       for (const key of keysToTry) {
         try {
           await redis.del(key);
@@ -1405,17 +1487,17 @@ import { settings } from '@devvit/web/server';
           // Ignore errors for keys that don't exist
         }
       }
-      
+
       console.log('[TEST] Redis data cleared successfully');
-      
+
       res.json({
         success: true,
         message: 'Redis data cleared successfully',
         clearedKeys: {
           familiar: familiarKey,
           consent: consentKey,
-          attempted: keysToTry.length
-        }
+          attempted: keysToTry.length,
+        },
       });
     } catch (error) {
       console.error(`Error clearing Redis: ${error}`);

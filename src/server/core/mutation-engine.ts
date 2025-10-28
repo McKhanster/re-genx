@@ -102,8 +102,8 @@ export class MutationEngine {
         undefined
       );
 
-      // Generate 3-5 trait options for one category
-      const traitOptions = this.generateTraitOptions();
+      // Generate trait options using Gemini AI
+      const traitOptions = await this.generateAITraitOptions(familiarId);
 
       // Create choice session with 5-minute TTL
       const sessionId = `mutation:choice:${familiarId}:${Date.now()}`;
@@ -118,12 +118,9 @@ export class MutationEngine {
       );
 
       // Set 5-minute expiry (300 seconds)
-      await this.safeRedisOperation(
-        async () => {
-          await this.redis.expire(sessionId, 300);
-        },
-        undefined
-      );
+      await this.safeRedisOperation(async () => {
+        await this.redis.expire(sessionId, 300);
+      }, undefined);
 
       return {
         sessionId,
@@ -241,11 +238,11 @@ export class MutationEngine {
     for (const category of allCategories) {
       // Check if this category is compatible with all existing mutations
       const compatibleWith = this.compatibilityMatrix[category];
-      
+
       if (!compatibleWith) {
         continue;
       }
-      
+
       let isCompatible = true;
 
       for (const existing of existingCategories) {
@@ -276,10 +273,7 @@ export class MutationEngine {
   async applyChosenMutation(sessionId: string, chosenOptionId: string): Promise<MutationData> {
     try {
       // Get session data
-      const sessionData = await this.safeRedisOperation(
-        () => this.redis.hGetAll(sessionId),
-        null
-      );
+      const sessionData = await this.safeRedisOperation(() => this.redis.hGetAll(sessionId), null);
 
       if (!sessionData || Object.keys(sessionData).length === 0) {
         throw new Error('Invalid or expired mutation session');
@@ -329,12 +323,9 @@ export class MutationEngine {
       await this.addMutationToFamiliar(familiarId, mutation);
 
       // Clean up session
-      await this.safeRedisOperation(
-        async () => {
-          await this.redis.del(sessionId);
-        },
-        undefined
-      );
+      await this.safeRedisOperation(async () => {
+        await this.redis.del(sessionId);
+      }, undefined);
 
       return mutation;
     } catch (error) {
@@ -346,6 +337,66 @@ export class MutationEngine {
   /**
    * Generate 3-5 trait options for one random category
    *
+   * @returns Array of TraitOption
+   */
+  private async generateAITraitOptions(familiarId: string): Promise<TraitOption[]> {
+    try {
+      // Get familiar data for context
+      const familiarData = await this.safeRedisOperation(() => this.redis.hGetAll(familiarId), {});
+
+      // Build mutation context
+      const context: any = {
+        creatureId: familiarId,
+        stats: JSON.parse(familiarData.stats || '{}'),
+        mutations: JSON.parse(familiarData.mutations || '[]'),
+        biome: (familiarData.biome || 'jungle') as
+          | 'jungle'
+          | 'rocky_mountain'
+          | 'desert'
+          | 'ocean'
+          | 'cave',
+      };
+
+      // Only add activityCategory if it exists
+      if (familiarData.activityCategory) {
+        context.activityCategory = familiarData.activityCategory;
+      }
+
+      // Import Gemini processor directly
+      const { GeminiProcessor } = await import('../llm/gemini-processor.js');
+      const { settings } = await import('@devvit/web/server');
+
+      const genAIKey = await settings.get('genAIKey');
+      if (!genAIKey || typeof genAIKey !== 'string') {
+        console.warn('[MutationEngine] Gemini API key not available, using fallback options');
+        return this.generateTraitOptions();
+      }
+
+      const processor = new GeminiProcessor(genAIKey);
+
+      console.log('[MutationEngine] Generating AI mutation options for:', familiarId);
+      const mutationOptions = await processor.generateMutationOptions(context);
+
+      // Convert MutationOption[] to TraitOption[]
+      const traitOptions = mutationOptions.map((option) => ({
+        id: option.id,
+        category: option.category,
+        label: option.label,
+        value: option.description || option.label,
+      }));
+
+      console.log('[MutationEngine] Generated AI trait options:', traitOptions);
+      return traitOptions;
+    } catch (error) {
+      console.error('[MutationEngine] Failed to generate AI trait options:', error);
+      console.log('[MutationEngine] Falling back to hardcoded options');
+      return this.generateTraitOptions();
+    }
+  }
+
+  /**
+   * Generate trait options for controlled mutations (fallback)
+   * Creates 3-5 options for a random category
    * @returns Array of TraitOption
    */
   private generateTraitOptions(): TraitOption[] {
@@ -384,7 +435,12 @@ export class MutationEngine {
           { id: 'appendage_tail', category: 'appendage', label: 'Tail', value: 'tail' },
           { id: 'appendage_wings', category: 'appendage', label: 'Wings', value: 'wings' },
           { id: 'appendage_horns', category: 'appendage', label: 'Horns', value: 'horns' },
-          { id: 'appendage_tentacles', category: 'appendage', label: 'Tentacles', value: 'tentacles' },
+          {
+            id: 'appendage_tentacles',
+            category: 'appendage',
+            label: 'Tentacles',
+            value: 'tentacles',
+          },
         ];
 
       case 'pattern':
@@ -675,7 +731,8 @@ export class MutationEngine {
 
         // If we've tried multiple times and still no compatible mutation, try suggestions
         if (attempts >= 3 && compatibility.suggestions.length > 0) {
-          const suggestion = compatibility.suggestions[Math.floor(Math.random() * compatibility.suggestions.length)];
+          const suggestion =
+            compatibility.suggestions[Math.floor(Math.random() * compatibility.suggestions.length)];
           if (suggestion) {
             mutationType = suggestion;
             break;
@@ -685,7 +742,9 @@ export class MutationEngine {
 
       // If we couldn't find a compatible mutation after max attempts, skip this mutation
       if (attempts >= maxAttempts || !mutationType) {
-        console.log(`Could not find compatible mutation for familiar ${familiarId} after ${maxAttempts} attempts`);
+        console.log(
+          `Could not find compatible mutation for familiar ${familiarId} after ${maxAttempts} attempts`
+        );
         throw new Error('No compatible mutations available');
       }
 
@@ -754,18 +813,19 @@ export class MutationEngine {
    * @returns Mutation type string
    */
   private selectMutationFromActivity(pattern: ActivityPattern): string {
-    // Map activity categories to mutation types
+    // Map activity categories to mutation types - prioritize creature parts for better visuals
     const categoryMutations: Record<string, string[]> = {
-      gaming: ['appendage', 'pattern', 'color'],
-      nature: ['pattern', 'color', 'appendage'],
-      tech: ['pattern', 'appendage', 'size'],
-      art: ['color', 'pattern', 'size'],
-      animals: ['pattern', 'appendage', 'legs'],
-      science: ['size', 'appendage', 'pattern'],
-      general: ['legs', 'color', 'size', 'appendage', 'pattern'],
+      gaming: ['tentacles', 'spikes', 'eyes', 'horns'],
+      nature: ['wings', 'fur', 'tail', 'scales'],
+      tech: ['spikes', 'tentacles', 'eyes', 'horns'],
+      art: ['wings', 'scales', 'pattern', 'color'],
+      animals: ['legs', 'tail', 'fur', 'eyes'],
+      science: ['tentacles', 'eyes', 'spikes', 'horns'],
+      general: ['legs', 'eyes', 'wings', 'horns', 'tentacles', 'tail'],
     };
 
-    const mutations = categoryMutations[pattern.dominantCategory] || categoryMutations.general || [];
+    const mutations =
+      categoryMutations[pattern.dominantCategory] || categoryMutations.general || [];
 
     // 30% bias toward category-specific mutations
     if (Math.random() < 0.3 && mutations.length > 0) {
@@ -783,7 +843,22 @@ export class MutationEngine {
    * @returns Random mutation type string
    */
   private selectRandomMutationType(): string {
-    const types = ['legs', 'color', 'size', 'appendage', 'pattern'];
+    // Prioritize creature parts for better visual mutations
+    const creatureParts = [
+      'legs',
+      'eyes',
+      'wings',
+      'horns',
+      'tentacles',
+      'tail',
+      'spikes',
+      'scales',
+      'fur',
+    ];
+    const genericTypes = ['color', 'size', 'appendage', 'pattern', 'texture'];
+
+    // 70% chance for creature parts, 30% for generic types
+    const types = Math.random() < 0.7 ? creatureParts : genericTypes;
     const selectedType = types[Math.floor(Math.random() * types.length)];
     return selectedType || 'legs'; // Fallback to 'legs' if undefined
   }
@@ -811,7 +886,15 @@ export class MutationEngine {
 
       case 'color': {
         // Random color from palette
-        const colors = ['#ff0000', '#0000ff', '#00ff00', '#ff00ff', '#ffd700', '#ff8800', '#00ffff'];
+        const colors = [
+          '#ff0000',
+          '#0000ff',
+          '#00ff00',
+          '#ff00ff',
+          '#ffd700',
+          '#ff8800',
+          '#00ffff',
+        ];
         value = colors[Math.floor(Math.random() * colors.length)] || '#00ff00';
         break;
       }

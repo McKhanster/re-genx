@@ -199,7 +199,7 @@ export class PersonalityStateManager {
         timestamp: Date.now().toString()
       });
 
-      console.log(`[PersonalityState] Updated memory for creature ${creatureId}: ${memory.substring(0, 50)}...`);
+      console.log(`[PersonalityState] Updated memory for creature ${creatureId}: ${memory}`);
 
     } catch (error) {
       console.error(`[PersonalityState] Failed to update memory for creature ${creatureId}:`, error);

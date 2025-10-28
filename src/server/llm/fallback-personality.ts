@@ -46,7 +46,7 @@ export class FallbackPersonalitySystem {
     console.log(`[FallbackPersonality] Generated fallback personality:`, {
       mood: response.mood,
       energy: response.energy,
-      sound: response.sound.substring(0, 30) + '...'
+      sound: response.sound
     });
 
     return response;

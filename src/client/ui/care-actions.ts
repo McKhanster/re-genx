@@ -2,7 +2,7 @@
  * CareActionUI - Handles care action buttons and cooldown management
  */
 
-import { soundManager } from '../audio/sound-manager';
+// Sound system removed
 
 export interface CareActionResult {
   careMeter: number;
@@ -106,8 +106,7 @@ export class CareActionUI {
       // Set cooldown (5 seconds for testing)
       this.setCooldown(action, 1 * 1000);
 
-      // Play sound effect for care action
-      soundManager.playSound(action, 0.7);
+      // Sound removed
 
       // Show feedback animations
       this.showFeedback(data.careMeterIncrease, data.evolutionPointsGained);

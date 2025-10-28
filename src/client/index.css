@@ -77,6 +77,9 @@ button,
   pointer-events: none; /* allow clicks to pass through except on interactive elements */
 }
 
+/* Reverted to original */
+
+/* Title restored for loading screen */
 .title {
   position: fixed;
   top: 16px;
@@ -196,7 +199,7 @@ button,
 
 .hud-info-label {
   text-transform: uppercase;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 
 .hud-info-value {
@@ -209,8 +212,8 @@ button,
 .hud-bottom-left,
 .hud-bottom-right {
   position: absolute;
-  bottom: 16px;
-  font-size: 0.75rem;
+  top:12px;
+  font-size: 0.80rem;
   color: rgba(0, 255, 136, 0.6);
   text-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
   pointer-events: none;
@@ -227,7 +230,7 @@ button,
 /* Slide-down menu panel (hidden by default) */
 .hud-menu-panel {
   position: absolute;
-  top: 0;
+  top: 60px;
   left: 0;
   right: 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.85) 100%);
@@ -245,31 +248,39 @@ button,
   transform: translateY(0);
 }
 
+/* App Bar */
+.app-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(0, 0, 0, .95);
+  border-bottom: 1px solid rgba(0, 255, 136, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 16px;
+  z-index: 1000;
+}
+
 /* Menu toggle button */
 .hud-menu-toggle {
-  position: absolute;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
   background: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(0, 255, 136, 0.4);
-  border-radius: 4px;
-  padding: 6px 16px;
-  color: rgba(0, 255, 136, 0.8);
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
+  padding: 8px;
   cursor: pointer;
   pointer-events: auto;
   transition: all 0.2s ease;
-  letter-spacing: 0.1em;
   z-index: 1001;
   /* Ensure minimum touch target */
   min-height: 44px;
   min-width: 44px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
 }
 
 .hud-menu-toggle:hover {
@@ -279,8 +290,34 @@ button,
 }
 
 .hud-menu-toggle:active {
-  transform: translateX(-50%) scale(0.95);
+  transform: scale(0.95);
   background: rgba(0, 255, 136, 0.2);
+}
+
+/* Hamburger lines */
+.hamburger-line {
+  width: 20px;
+  height: 2px;
+  background: rgba(0, 255, 136, 0.8);
+  border-radius: 1px;
+  transition: all 0.3s ease;
+}
+
+.hud-menu-toggle:hover .hamburger-line {
+  background: #00ff88;
+}
+
+/* Hamburger animation when active (menu open) */
+.hud-menu-toggle.active .hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hud-menu-toggle.active .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.hud-menu-toggle.active .hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
 }
 
 /* Menu content */
@@ -875,7 +912,7 @@ button,
 /* Evolve Button */
 .evolve-button-container {
   position: absolute;
-  bottom: 80px;
+  top: 2;
   left: 50%;
   transform: translateX(-50%);
   pointer-events: auto;
@@ -885,8 +922,6 @@ button,
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 16px 32px;
   background: linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 200, 100, 0.2) 100%);
   border: 2px solid rgba(0, 255, 136, 0.6);
   border-radius: 12px;
@@ -926,11 +961,6 @@ button,
   box-shadow: 0 8px 24px rgba(255, 136, 0, 0.3), 0 0 40px rgba(255, 136, 0, 0.2);
 }
 
-.evolve-icon {
-  font-size: 2rem;
-  line-height: 1;
-  filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.6));
-}
 
 .evolve-label {
   font-size: 1rem;
@@ -1386,21 +1416,18 @@ button,
 
   /* Mutation choice UI mobile */
   .evolve-button-container {
-    bottom: 60px;
+    top: 8px;
   }
 
   .evolve-btn {
-    padding: 12px 24px;
-    min-width: 120px;
+    padding: 4px 8px;
+    min-width: 100px;
     min-height: 44px; /* Touch target */
     /* Add touch feedback */
     -webkit-tap-highlight-color: rgba(0, 255, 136, 0.3);
     touch-action: manipulation;
   }
 
-  .evolve-icon {
-    font-size: 1.5rem;
-  }
 
   .evolve-label {
     font-size: 0.9rem;
@@ -2886,3 +2913,16 @@ button,
     right: -10px;
   }
 }
+
+/* Force hide all sound-related elements */
+.sound-settings,
+.sound-settings-toggle,
+.sound-settings-panel,
+.sound-slider,
+.sound-setting-item,
+.volume-value {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+/* Reverted all app bar changes */

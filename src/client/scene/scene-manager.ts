@@ -158,8 +158,8 @@ export class SceneManager {
     this.scene.add(sunLight);
 
     // Ambient light for natural fill lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Bright white ambient
-    this.scene.add(ambientLight);
+    // const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Bright white ambient
+    // this.scene.add(ambientLight);
 
     // Hemisphere light for sky/ground color variation
     const hemisphereLight = new THREE.HemisphereLight(

@@ -1,7 +1,7 @@
 import { navigateTo } from '@devvit/client';
 import { InitResponse } from '../shared/types/api';
 import { GameManager } from './core/game-manager';
-import { SoundSettings } from './ui/sound-settings';
+// Sound system removed
 
 // Set up navigation links
 const docsLink = document.getElementById('docs-link');
@@ -133,9 +133,9 @@ async function initializeApp(): Promise<void> {
       throw new Error('Canvas element not found');
     }
 
-    // Initialize sound settings
-    new SoundSettings();
-    console.log('SoundSettings initialized');
+    // Sound system removed - clean up any leftover DOM elements
+    const soundElements = document.querySelectorAll('.sound-settings, .sound-settings-toggle, .sound-settings-panel');
+    soundElements.forEach(element => element.remove());
 
     // Create and initialize game manager
     const gameManager = new GameManager(canvas);

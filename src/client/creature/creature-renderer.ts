@@ -501,6 +501,8 @@ import { calculateRadiusOffset, generatePulsation } from '../utils/noise';
 import { MutationData } from '../../shared/types/api';
 import { generateMutationGeometry } from './mutation-geometry';
 import { StatFeedback } from '../ui/stat-feedback';
+import { VoronoiShaderMaterial } from '../rendering/voronoi-shader-material';
+import { HaloEffect } from '../rendering/halo-effect';
 
 /**
  * CreatureRenderer handles rendering the base creature blob and all applied mutations
@@ -509,7 +511,8 @@ import { StatFeedback } from '../ui/stat-feedback';
 export class CreatureRenderer {
   private baseMesh: THREE.Mesh;
   private baseGeometry: THREE.SphereGeometry;
-  private baseMaterial: THREE.MeshPhongMaterial;
+  private baseMaterial: VoronoiShaderMaterial;
+  private haloEffect?: HaloEffect;
   private mutationMeshes: Map<string, THREE.Mesh>;
   private scene: THREE.Scene;
   private isMobile: boolean;
@@ -540,15 +543,25 @@ export class CreatureRenderer {
     // Add creature to scene at center
     this.baseMesh.position.set(0, 5, 0); // At reasonable elevation
     this.scene.add(this.baseMesh);
+
+    // Add halo effect if not on mobile (for performance)
+    if (!this.isMobile) {
+      this.haloEffect = new HaloEffect(this.baseMesh, {
+        color: new THREE.Color(0x3366ff), // Blue halo
+        intensity: 0.8,
+        scale: 1.15,
+        opacity: 0.6,
+      });
+    }
   }
 
   /**
-   * Create the base pulsating blob mesh with irregular organic geometry
+   * Create the base pulsating blob mesh with Voronoi cellular shader
    * Uses LOD-based segment count for optimal performance
    */
   private createBaseMesh(): {
     geometry: THREE.SphereGeometry;
-    material: THREE.MeshPhongMaterial;
+    material: VoronoiShaderMaterial;
     mesh: THREE.Mesh;
   } {
     // LOD-based geometry complexity
@@ -576,14 +589,16 @@ export class CreatureRenderer {
     positionAttribute.needsUpdate = true;
     geometry.computeVertexNormals();
 
-    // Create semi-gloss platinum material with subtle glow
-    const material = new THREE.MeshPhongMaterial({
-      color: 0xe5e4e2, // Platinum color
-      emissive: 0xaaaaaa, // Subtle warm glow
-      emissiveIntensity: 0.3,
-      shininess: 80, // Semi-gloss finish
-      specular: 0xffffff, // Bright specular highlights for metallic look
-      flatShading: false, // Smooth shading for glossy look
+    // Create Voronoi cellular shader material with organic alien appearance
+    const material = new VoronoiShaderMaterial({
+      baseColor: new THREE.Color(0x0066ff), // Deep blue for cell centers
+      edgeColor: new THREE.Color(0xff3388), // Pink/magenta for cell edges
+      bFactor: 2.0, // Blue enhancement
+      pcurveHandle: 0.5, // Color curve adjustment
+      scale: this.isMobile ? 3.0 : 4.0, // Pattern scale (reduced for mobile)
+      speed: 0.3, // Animation speed
+      transparent: true,
+      opacity: 0.9,
     });
 
     const mesh = new THREE.Mesh(geometry, material);
@@ -598,12 +613,15 @@ export class CreatureRenderer {
   }
 
   /**
-   * Animate the creature with fluid organic motion
+   * Animate the creature with fluid organic motion and Voronoi shader
    * Should be called every frame
    * @param deltaTime - Time since last frame in seconds
    */
   public pulsate(deltaTime: number): void {
     this.time += deltaTime;
+
+    // Update Voronoi shader time for cellular animation
+    this.baseMaterial.updateTime(deltaTime);
 
     // Get position attribute
     const positionAttribute = this.baseGeometry.getAttribute('position');
@@ -636,10 +654,6 @@ export class CreatureRenderer {
     // Apply overall pulsation to the mesh scale
     const pulsation = generatePulsation(this.time, 1.0, 0.08);
     this.baseMesh.scale.set(pulsation, pulsation, pulsation);
-
-    // Pulse the glow intensity
-    const glowPulse = 0.5 + Math.sin(this.time * 1.5) * 0.2;
-    this.baseMaterial.emissiveIntensity = glowPulse;
   }
 
   /**
@@ -701,13 +715,27 @@ export class CreatureRenderer {
   }
 
   /**
+   * Get the Voronoi shader material for external customization
+   */
+  public getVoronoiMaterial(): VoronoiShaderMaterial {
+    return this.baseMaterial;
+  }
+
+  /**
+   * Get the halo effect for external customization
+   */
+  public getHaloEffect(): HaloEffect | undefined {
+    return this.haloEffect;
+  }
+
+  /**
    * Apply a mutation to the creature
    * @param mutation - Mutation data to apply
    * @param randomnessFactor - Factor for randomness (0-1)
    */
   public applyMutation(mutation: MutationData, randomnessFactor: number): void {
     console.log('CreatureRenderer: Applying mutation:', mutation.id, mutation.traits);
-    
+
     // Generate mutation geometry
     const mutationGeometry = generateMutationGeometry(mutation, randomnessFactor, this.isMobile);
 
@@ -733,7 +761,7 @@ export class CreatureRenderer {
 
     // Store reference
     this.mutationMeshes.set(mutation.id, mesh);
-    
+
     console.log('CreatureRenderer: Total mutations now:', this.mutationMeshes.size);
   }
 
@@ -772,15 +800,15 @@ export class CreatureRenderer {
 
         mesh.scale.lerpVectors(new THREE.Vector3(0, 0, 0), targetScale, eased);
 
-        // Pulse creature glow during animation
-        const glowBoost = Math.sin(progress * Math.PI) * 0.3;
-        this.baseMaterial.emissiveIntensity = 0.5 + glowBoost;
+        // Pulse creature shader speed during animation
+        const speedBoost = 1.0 + Math.sin(progress * Math.PI) * 0.5;
+        this.baseMaterial.setSpeed(0.3 * speedBoost);
 
         if (progress < 1) {
           requestAnimationFrame(animate);
         } else {
-          // Reset glow to normal
-          this.baseMaterial.emissiveIntensity = 0.5;
+          // Reset speed to normal
+          this.baseMaterial.setSpeed(0.3);
           resolve();
         }
       };
@@ -883,24 +911,36 @@ export class CreatureRenderer {
    */
   public updateCareMeterVisuals(careMeter: number): void {
     if (careMeter < 20) {
-      // Sad/distressed appearance - dull colors, minimal pulsing
-      this.baseMaterial.color.setHex(0x999999); // Dull gray
-      this.baseMaterial.emissive.setHex(0x666666); // Very dim glow
-      this.baseMaterial.emissiveIntensity = 0.1;
+      // Sad/distressed appearance - dull colors, slow animation
+      this.baseMaterial.setBaseColor(new THREE.Color(0x333366)); // Dark blue
+      this.baseMaterial.setEdgeColor(new THREE.Color(0x666633)); // Dark yellow-green
+      this.baseMaterial.setSpeed(0.1); // Very slow animation
+      this.baseMaterial.setBlueFactor(1.0); // Reduced blue enhancement
+      // Dim halo for sad state
+      this.haloEffect?.setColor(new THREE.Color(0x444444));
+      this.haloEffect?.setIntensity(0.3);
       // Creature appears to droop slightly
-      this.baseMesh.position.y = 4.5; // 10 units above terrain (-5.5 + 10 = 4.5)
+      this.baseMesh.position.y = 4.5;
     } else if (careMeter < 50) {
-      // Neutral appearance - normal colors, slower pulsing
-      this.baseMaterial.color.setHex(0xcccccc); // Light gray
-      this.baseMaterial.emissive.setHex(0x888888); // Dim glow
-      this.baseMaterial.emissiveIntensity = 0.2;
-      this.baseMesh.position.y = 4.6; // 10 units above terrain (-5.5 + 10 = 4.5, slight elevation for neutral)
+      // Neutral appearance - medium colors, normal animation
+      this.baseMaterial.setBaseColor(new THREE.Color(0x4455aa)); // Medium blue
+      this.baseMaterial.setEdgeColor(new THREE.Color(0xaa5544)); // Medium orange
+      this.baseMaterial.setSpeed(0.2); // Slower animation
+      this.baseMaterial.setBlueFactor(1.5); // Medium blue enhancement
+      // Medium halo for neutral state
+      this.haloEffect?.setColor(new THREE.Color(0x6666aa));
+      this.haloEffect?.setIntensity(0.6);
+      this.baseMesh.position.y = 4.6;
     } else {
-      // Happy appearance - bright colors, active pulsing
-      this.baseMaterial.color.setHex(0xe5e4e2); // Platinum
-      this.baseMaterial.emissive.setHex(0xaaaaaa); // Warm glow
-      this.baseMaterial.emissiveIntensity = 0.3;
-      this.baseMesh.position.y = 4.7; // 10 units above terrain (-5.5 + 10 = 4.5, slight elevation for happy)
+      // Happy appearance - bright colors, active animation
+      this.baseMaterial.setBaseColor(new THREE.Color(0x0066ff)); // Bright blue
+      this.baseMaterial.setEdgeColor(new THREE.Color(0xff3388)); // Bright pink
+      this.baseMaterial.setSpeed(0.3); // Normal animation speed
+      this.baseMaterial.setBlueFactor(2.0); // Full blue enhancement
+      // Bright halo for happy state
+      this.haloEffect?.setColor(new THREE.Color(0x3366ff));
+      this.haloEffect?.setIntensity(0.8);
+      this.baseMesh.position.y = 4.7;
     }
   }
 
@@ -921,25 +961,29 @@ export class CreatureRenderer {
           // Eating motion - expand and contract
           const eatScale = 1 + Math.sin(progress * Math.PI * 4) * 0.15;
           this.baseMesh.scale.set(eatScale, eatScale * 0.9, eatScale);
-          // Glow brighter
-          this.baseMaterial.emissiveIntensity = 0.5 + Math.sin(progress * Math.PI) * 0.4;
+          // Speed up cellular animation
+          this.baseMaterial.setSpeed(0.6 + Math.sin(progress * Math.PI) * 0.4);
           break;
 
         case 'play':
           // Bouncing/spinning motion
           const bounceHeight = Math.sin(progress * Math.PI * 3) * 0.5;
-          this.baseMesh.position.y = 4.7 + bounceHeight; // 10 units above terrain + bounce
+          this.baseMesh.position.y = 4.7 + bounceHeight;
           this.baseMesh.rotation.y = progress * Math.PI * 2;
-          // Pulse glow
-          this.baseMaterial.emissiveIntensity = 0.5 + Math.sin(progress * Math.PI * 6) * 0.3;
+          // Rapid cellular animation with color shifts
+          this.baseMaterial.setSpeed(1.0 + Math.sin(progress * Math.PI * 6) * 0.5);
+          // Cycle through colors during play
+          const playHue = (progress * 2) % 1;
+          const playColor = new THREE.Color().setHSL(playHue, 1.0, 0.5);
+          this.baseMaterial.setEdgeColor(playColor);
           break;
 
         case 'attention':
           // Happy pulse - gentle expansion
           const happyScale = 1 + Math.sin(progress * Math.PI * 2) * 0.1;
           this.baseMesh.scale.set(happyScale, happyScale, happyScale);
-          // Warm glow
-          this.baseMaterial.emissiveIntensity = 0.5 + Math.sin(progress * Math.PI) * 0.5;
+          // Gentle speed increase
+          this.baseMaterial.setSpeed(0.5 + Math.sin(progress * Math.PI) * 0.3);
           break;
       }
 
@@ -948,9 +992,12 @@ export class CreatureRenderer {
       } else {
         // Reset to normal state
         this.baseMesh.scale.set(1, 1, 1);
-        this.baseMesh.position.y = 4.7; // 10 units above terrain
+        this.baseMesh.position.y = 4.7;
         this.baseMesh.rotation.y = 0;
-        this.baseMaterial.emissiveIntensity = 0.5;
+        this.baseMaterial.setSpeed(0.3);
+        // Reset colors to default happy state
+        this.baseMaterial.setBaseColor(new THREE.Color(0x0066ff));
+        this.baseMaterial.setEdgeColor(new THREE.Color(0xff3388));
       }
     };
 
@@ -962,6 +1009,7 @@ export class CreatureRenderer {
    */
   public dispose(): void {
     this.clearMutations();
+    this.haloEffect?.dispose();
     this.baseGeometry.dispose();
     this.baseMaterial.dispose();
     this.scene.remove(this.baseMesh);
